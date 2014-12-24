@@ -81,6 +81,8 @@ var Compiler = function(){
 
 	var dstTable  = document.getElementById('dstTable');
 	var srcTable  = document.getElementById('srcTable');
+	var flgTable  = document.getElementById('flgTable');
+	
 	var currentCommand = document.getElementById('currentCommand');
 
 	xcanvas.clearCanvas('#ccf');
@@ -150,6 +152,12 @@ var Compiler = function(){
 		var _core 		= this;
 		var sourses 	= {};
 		var destination = {};
+		var flags 		= {};
+
+		flags.C = 0;
+		flags.Z = 0;
+		flags.S = 0;
+		flags.E = 0;
 
 		sourses.R0  	= 0;
 		sourses.R1  	= 0;
@@ -241,22 +249,43 @@ var Compiler = function(){
 
 			c = 0;
 			for(var p in sourses){
-				var addr = document.createElement('td');
-				addr.innerHTML = toHex(c);
+				if(c > 16 && c < 22)
+				{
+					var addr = document.createElement('td');
+					addr.innerHTML = toHex(c);
 
+					var row = document.createElement('tr');
+					row.setAttribute("id", "src" + c);
+
+					var reg = document.createElement('td');
+					reg.className = 'regCol';
+
+					var val = document.createElement('td');
+					reg.innerHTML = p;		
+					val.innerHTML = toHex(sourses[p]);
+					row.appendChild(addr);
+					row.appendChild(reg);
+					row.appendChild(val);
+					srcTable.appendChild(row);				
+				}
+				c++;
+			}
+
+			c = 0;
+			for(var p in flags){
 				var row = document.createElement('tr');
-				row.setAttribute("id", "src" + c);
+				row.setAttribute("id", "flg" + c);
 
-				var reg = document.createElement('td');
-				reg.className = 'regCol';
+				var flg = document.createElement('td');
+				flg.className = 'regCol';
 
 				var val = document.createElement('td');
-				reg.innerHTML = p;		
-				val.innerHTML = toHex(sourses[p]);
-				row.appendChild(addr);
-				row.appendChild(reg);
+				flg.innerHTML = p;		
+				val.innerHTML = toHex(flags[p]);
+
+				row.appendChild(flg);
 				row.appendChild(val);
-				srcTable.appendChild(row);
+				flgTable.appendChild(row);
 				c++;
 			}
 		};
@@ -303,6 +332,7 @@ var Compiler = function(){
 
 	var core = new Core();	
 	core.refresh();
-	core.selectRow('src', 5);
+	core.selectRow('src', 18);
 	core.selectRow('dst', 7);
+	core.selectRow('flg', 2);
 };

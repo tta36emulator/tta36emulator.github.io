@@ -26,13 +26,15 @@ body {
 	background-color:#fff;
 	float:left;
 	clear:left;
-	width: 355px;
+	width: 450px;
 }
 
 #scrPane{
 	background-color:#fff;
 	float:left;
 }
+
+
 
 .ctable{
 	border-collapse: collapse;
@@ -89,6 +91,11 @@ tr, td {
 #srcPane{
 	position:absolute;
 	margin-left: 180px;
+}
+
+#flgPane{
+	position:absolute;
+	margin-left: 350px;
 }
 
 .slot2{
