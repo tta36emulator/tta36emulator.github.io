@@ -225,6 +225,10 @@ var Compiler = function(){
 			(value > 0xFFFF) ? flags.C = 1 : flags.C = 0;
 		};
 
+		var parseCommand = function(command){
+			return {src:"", dst:"", cdtn:"", const10:false, const16: false}
+		};
+
 		_core.drawRegisters = function(){
 			destroyChildren(srcTable);
 			destroyChildren(dstTable);
@@ -318,6 +322,15 @@ var Compiler = function(){
 		_core.step = function(){
 			var s = codeEditor.step();
 			currentCommand.innerHTML = s;
+		};
+
+		_core.runCommand = function(command){
+			var parsed = parseCommand(command);
+
+			if(parsed.const10 || parsed.const16) //const
+			   destination[parsed.dst] = parsed.src;
+			else //source register
+			   destination[parsed.dst] = sourses[parsed.src];
 		};
 
 		_core.reset = function(){
