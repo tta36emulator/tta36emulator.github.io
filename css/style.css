@@ -1,0 +1,142 @@
+body {
+	background-color:#000;
+	margin:0;
+	padding:0;
+}
+
+#container{
+	position: absolute;
+	width: 100%; 
+	height: 100%; 
+}
+
+#panes {
+	display:table;
+	position:relative;
+	margin:5px auto 0;
+}
+
+#screenPane{
+	color:transparent;
+	float:left;
+	clear:left;
+}
+
+#CorePane{
+	background-color:#fff;
+	float:left;
+	clear:left;
+	width: 355px;
+}
+
+#scrPane{
+	background-color:#fff;
+	float:left;
+}
+
+.ctable{
+	border-collapse: collapse;
+}
+
+tr:hover{
+	background-color: #ccf;
+}
+
+tr, td {
+	border: 1px solid black;
+}
+
+.regCol{
+	font-size: 14px;
+	font-weight: 700;
+	font-family: serif;
+}
+
+.currentLine{
+	background-color: #00f;
+}
+
+.simpleLine{
+	background-color: #000;
+}
+
+.ttaWord{
+	background-color:#fff;
+	font-size: 14px;
+	font-weight: 700;
+	font-family: serif;
+	float:left;
+	clear:left;
+}
+
+.bundle{
+	background-color:#ccc;
+}
+
+.command{
+	background-color:#0f0;
+	font-size: 14px;
+	font-weight: 700;
+	font-family: serif;
+}
+
+#dstPane{
+	position: relative;
+	float:left;
+	clear:left;
+}
+
+#srcPane{
+	position:absolute;
+	margin-left: 180px;
+}
+
+.slot2{
+	background-color:#cfc;
+	font-size: 14px;
+	font-weight: 700;
+	font-family: serif;
+}
+
+.slot1{
+	background-color:#fcc;
+	font-size: 14px;
+	font-weight: 700;
+	font-family: serif;
+}
+
+.slot0{
+	background-color:#ccf;
+	font-size: 14px;
+	font-weight: 700;
+	font-family: serif;
+}
+
+#editorPane {
+	display:block;
+	opacity:1;
+	float:left;
+	position:relative;
+	left:1px;
+}
+
+#codePane {
+	border:2px solid #ccc;
+}
+
+.readOnly {
+	background:#031337;
+}
+
+:focus {
+	outline:none;
+}
+
+#lay1{
+	position: absolute;
+	z-index: 0;
+}
+
+#lay2{
+	z-index: 1;
+}
