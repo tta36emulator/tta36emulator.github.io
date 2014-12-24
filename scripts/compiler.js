@@ -304,19 +304,10 @@ var Compiler = function(){
 
 		_core.update = function(){
 			sourses.ADD  = destination["ADD.A"]  + destination["ADD.B"];
-			checkFlags(sourses.ADD);
-
 			sourses.ADDC = destination["ADDC.A"] + destination["ADDC.B"] + flags.C;
-			checkFlags(sourses.ADDC);
-
 			sourses.SUB  = destination["SUB.B"]  - destination["SUB.A"];
-			checkFlags(sourses.SUB);
-
 			sourses.XOR  = destination["XOR.B"]  ^ destination["XOR.A"];
-			checkFlags(sourses.XOR);
-
-			sourses.AND  = destination["AND.B"]  & destination["AND.A"];
-			checkFlags(sourses.AND);
+			//hardRegisters[i] = hardRegisters[i] % 0x10000
 		};
 
 		_core.refresh = function(){
