@@ -146,7 +146,7 @@ var Compiler = function(){
 		row.appendChild(reg);
 		row.appendChild(val);
 		srcTable.appendChild(row);
-	}
+	};
 
 	var Core = function(){
 		var _core 		= this;
@@ -204,8 +204,8 @@ var Compiler = function(){
 		destination.IP  	= 0;
 		destination.ADDR 	= 0;
 		destination.DATA 	= 0;
-		destination["ADD.A"] 	= 10;
-		destination["ADD.B"] 	= 5;
+		destination["ADD.A"] 	= 32000;
+		destination["ADD.B"] 	= 1000;
 		destination["AND.A"] 	= 0;
 		destination["AND.B"] 	= 0;
 		destination["SUB.A"]	= 0;
@@ -218,6 +218,12 @@ var Compiler = function(){
 		destination.STATE 		= 0;
 		destination.POUT 		= 0;
 		destination.NULL 		= 0;
+
+		var checkFlags = function(value){
+			(value > 0x8000) ? flags.S = 1 : flags.S = 0;
+			(value === 0)    ? flags.Z = 1 : flags.Z = 0;
+			(value > 0xFFFF) ? flags.C = 1 : flags.C = 0;
+		};
 
 		_core.drawRegisters = function(){
 			destroyChildren(srcTable);
@@ -298,10 +304,19 @@ var Compiler = function(){
 
 		_core.update = function(){
 			sourses.ADD  = destination["ADD.A"]  + destination["ADD.B"];
-			sourses.ADDC = destination["ADDC.A"] + destination["ADDC.B"];
+			checkFlags(sourses.ADD);
+
+			sourses.ADDC = destination["ADDC.A"] + destination["ADDC.B"] + flags.C;
+			checkFlags(sourses.ADDC);
+
 			sourses.SUB  = destination["SUB.B"]  - destination["SUB.A"];
+			checkFlags(sourses.SUB);
+
 			sourses.XOR  = destination["XOR.B"]  ^ destination["XOR.A"];
+			checkFlags(sourses.XOR);
+
 			sourses.AND  = destination["AND.B"]  & destination["AND.A"];
+			checkFlags(sourses.AND);
 		};
 
 		_core.refresh = function(){
@@ -328,7 +343,7 @@ var Compiler = function(){
 
 	_compiler.getCore = function(){
 		return core;
-	}
+	};
 
 	var core = new Core();	
 	core.refresh();
