@@ -85,6 +85,12 @@ var Compiler = function(){
 	
 	var currentCommand = document.getElementById('currentCommand');
 
+	var temp = {
+		slot0:{src:0,dst:0},
+		slot1:{src:0,dst:0},
+		slot2:{src:0,dst:0},
+	};
+
 	xcanvas.clearCanvas('#ccf');
 	xcanvas.drawText('Console 12pt', 'SCREEN', 5, 10, '#000');
 
@@ -300,6 +306,100 @@ var Compiler = function(){
 			return {src:_src, dst:_dst, cdtn:_cdtn, const10:_c10, const16: _c16}
 		};
 
+		var parseBundle = function(bundle){
+			var commands = bundle.split(',');
+			for(var i = 0; i < commands.length; i++)
+				commands[i] = commands[i].trim();
+			return commands;
+		};
+
+		var getBundleSlots = function(bundle){
+			var commands = parseBundle(bundle);
+			var slots = [];
+			var parsedCommands = [];
+
+			if(commands.length < 3){
+				for (var i = commands.length; i < 3; i++)
+					commands.push("R1->NULL");
+			}
+
+			for(var i = 0; i < commands.length; i++)
+				parsedCommands.push(parseCommand(commands[i]));
+
+			//############-Create slots-#################################
+
+				var slot0 = null;
+				var slot1 = null;
+				var slot2 = null;
+
+				var const16E = false;
+				var const10E = false;
+
+				var const16A = -1;
+				var const10A = -1;
+
+				for(var i = 0; i < parsedCommands.length; i++){
+					var cmd = parsedCommands[i];
+					if(cmd.const10) const10A  = i;
+					if(cmd.const16) const16A  = i;
+				}
+
+				parsedCommands.splice(const10A,1);
+				parsedCommands.splice(const16A,1);
+
+				if(const10A > -1)
+				{
+					var cmd = parsedCommands[const10A];
+					slot0 = {const10:get10bitFromConst(cmd.src)};
+					slot1 = {src: sourses.const10, dst:cmd.dst, cdtn:cmd.cdtn};
+				}
+
+				if(const16A > -1)
+				{
+					var cmd = parsedCommands[const16A];
+					slot0 = {const10:get10bitFromConst(cmd.src)};
+					slot1 = {cdtn:get3bitFromConst(cmd.src)};
+					slot2 = {cdtn:get3bitFromConst(cmd.src)};
+				}
+
+				if(const10A === -1 && const16A === -1)
+				{
+					for(var i = 0; i < parsedCommands.length; i++){
+						var cmd = parsedCommands[i];
+
+						if(cmd.cdtn === '' && slot0 === null) 
+							slot0 = {src:cmd.src, dst:cmd.dst}
+						else if(slot1 === null)
+							slot1 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}
+						else if(slot2 === null)
+							slot2 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}				
+					}
+				}
+				else
+				{
+					if(const10A)
+					{
+						if(slot2 === null)
+							slot2 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}	
+					}
+					else if(const16A)
+					{
+						if(cmd.cdtn !== '')
+							console.log('ERROR: CONST16 defined condition bits disabled...');
+						else
+						{
+							if(slot1.src === undefined && slot1.dst === undefined)
+								slot1 = {src:cmd.src, dst:cmd.dst}
+							else if(slot2.src === undefined && slot2.dst === undefined)
+								slot2 = {src:cmd.src, dst:cmd.dst}
+						}
+					}
+				}	
+			return slots;
+		};
+
+		//############-Create slots-#################################
+
 		_core.drawRegisters = function(){
 			destroyChildren(srcTable);
 			destroyChildren(dstTable);
@@ -386,7 +486,11 @@ var Compiler = function(){
 		};
 
 		_core.refresh = function(){
-			parseCommand("NZ? #200 -> R1");
+			//'R2->R1, R3->R5, R7->R10'
+			//'R2->R1, NZ? R3->R5, C? R7->R10'
+
+			var slots = getBundleSlots('R8->R1, #20->R5, C? R7->R10');
+			executeSlots(slots);
 			core.update();
 			core.drawRegisters();
 		};
