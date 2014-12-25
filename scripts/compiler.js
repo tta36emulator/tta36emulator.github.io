@@ -226,7 +226,78 @@ var Compiler = function(){
 		};
 
 		var parseCommand = function(command){
-			return {src:"", dst:"", cdtn:"", const10:false, const16: false}
+
+			//Example: 	#10->R1
+			//			#0x80->R1	
+			//			Z? #200->R1
+			//			C? #200->R1
+			//			S? #200->R1
+
+			var _src  = "";
+			var _dst  = "";
+			var _cdtn = "";
+			var _c10 = false;
+			var _c16 = false;
+
+			//############-condition-##################################
+				if(command.indexOf('?') > -1) 
+				{
+					if(command.indexOf('NZ?') > -1){
+						command = command.replace("NZ?","").trim();
+						_cdtn = 'NZ?';
+					}
+
+					else if(command.indexOf('Z?') > -1){
+						command = command.replace("Z?","").trim();
+						_cdtn = 'Z?';
+					}
+
+					else if(command.indexOf('C?') > -1){
+						command = command.replace("C?","").trim();
+						_cdtn = 'C?';
+					}
+
+					else if(command.indexOf('NC?') > -1){
+						command = command.replace("NC?","").trim();
+						_cdtn = 'NC?';
+					}
+
+					else if(command.indexOf('S?') > -1){
+						command = command.replace("S?","").trim();
+						_cdtn = 'S?';
+					}
+
+					else if(command.indexOf('E?') > -1){
+						command = command.replace("E?","").trim();
+						_cdtn = 'E?';
+					}
+				}
+			//############-condition-##################################
+
+			//############-SRC-DST-####################################
+				if(command.indexOf('->') > -1) {
+					var srcdst = command.split('->');
+					_src = srcdst[0].trim();
+					_dst = srcdst[1].trim();
+				}
+			//############-SRC-DST-####################################
+
+			//############-Const10/16-#################################
+				if(_src.indexOf('#') > -1){
+					_src = _src.replace('#','').trim();
+
+					if(_src.indexOf('0x') > -1){
+						_src = _src.replace('0x','').trim();
+						_src = toDec(_src);
+					}
+					else
+						_src = parseInt(_src);
+
+					(_src > 0x3FF) ? _c16 = true : _c10 = true;				
+				}
+			//############-Const10/16-#################################
+
+			return {src:_src, dst:_dst, cdtn:_cdtn, const10:_c10, const16: _c16}
 		};
 
 		_core.drawRegisters = function(){
@@ -315,6 +386,7 @@ var Compiler = function(){
 		};
 
 		_core.refresh = function(){
+			parseCommand("NZ? #200 -> R1");
 			core.update();
 			core.drawRegisters();
 		};
