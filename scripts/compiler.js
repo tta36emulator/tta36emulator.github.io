@@ -159,6 +159,10 @@ var Compiler = function(){
 			node.removeChild(node.firstChild);
 	};
 
+	var t = function(){
+
+	};
+
 	var createHeaders = function(){
 		var row = document.createElement('tr');
 		var reg = document.createElement('td');
