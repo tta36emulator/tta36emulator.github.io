@@ -178,6 +178,9 @@ var CodeEditor = function () {
 		};
 
 		self.reset = function(){
+
+			self.loadCode(self.getCode());
+
 			editor.removeLineClass(currentLineNum, "wrap", "currentLine");
 			editor.addLineClass(currentLineNum, "wrap", "simpleLine");
 			  currentLineNum=0;

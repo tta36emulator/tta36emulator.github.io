@@ -75,13 +75,43 @@ var Compiler = function(){
 
 	_compiler = this;
 	var codeEditor  = new CodeEditor();
+
 	var screen  = document.getElementById('lay1');
 	var bg_context = screen.getContext('2d');
+
+	var errorScreen   = document.getElementById('lay3');
+	var errorContext = errorScreen.getContext('2d');
+
 	var xcanvas = new Xcanvas(bg_context, screen);
+	var errorCanvas = new Xcanvas(errorContext, screen);
 
 	var dstTable  = document.getElementById('dstTable');
 	var srcTable  = document.getElementById('srcTable');
 	var flgTable  = document.getElementById('flgTable');
+
+	var SlotsTable = {
+		values:{
+			slot0src: document.getElementById('slot0SRCVal'),
+			slot0dst: document.getElementById('slot0DSTVal'),
+			slot1src: document.getElementById('slot1SRCVal'),
+			slot1dst: document.getElementById('slot1DSTVal'),
+			slot2src: document.getElementById('slot2SRCVal'),
+			slot2dst: document.getElementById('slot2DSTVal'),
+			slot1cdtn: document.getElementById('slot1CDTNVal'),
+			slot2cdtn: document.getElementById('slot2CDTNVal'),
+		},
+
+		exp:{
+			slot0src: document.getElementById('slot0SRCExp'),
+			slot0dst: document.getElementById('slot0DSTExp'),
+			slot1src: document.getElementById('slot1SRCExp'),
+			slot1dst: document.getElementById('slot1DSTExp'),
+			slot2src: document.getElementById('slot2SRCExp'),
+			slot2dst: document.getElementById('slot2DSTExp'),
+			slot1cdtn: document.getElementById('slot1CDTNExp'),
+			slot2cdtn: document.getElementById('slot2CDTNExp'),
+		}
+	}
 	
 	var currentCommand = document.getElementById('currentCommand');
 
@@ -94,8 +124,11 @@ var Compiler = function(){
 	xcanvas.clearCanvas('#ccf');
 	xcanvas.drawText('Console 12pt', 'SCREEN', 5, 10, '#000');
 
+	errorCanvas.clearCanvas('#fcc');
+	errorCanvas.drawText('Console 12pt', 'ERROR', 5, 10, '#000');
+
 	codeEditor.refresh();
-	codeEditor.loadCode("#10 -> ADD.A\n#10 -> ADD.B\nADD -> R1\n#10 -> ADD.A\n#10 -> ADD.B\nADD -> R1\n#10 -> ADD.A\n#10 -> ADD.B\nADD -> R1\n#10 -> ADD.A\n#10 -> ADD.B\nADD -> R1\n#10 -> ADD.A\n#10 -> ADD.B\nADD -> R1");
+	codeEditor.loadCode("R1->R2\nR1->R2, R3->R4, R5->R6\nZ? R1->R2, R3->R4, R5->R6\nZ? R1->R2, NZ? R3->R4, R5->R6\n#10->R7\n#10->R7,R10->R11");
 
 	var zeroFill  = function( number, width )
 	{
@@ -107,6 +140,13 @@ var Compiler = function(){
 	var toDec = function(hexNumber) {
         return parseInt(hexNumber,16);
 	};
+
+	function toBin(decValue){
+		if(decValue >= 0)
+			return decValue.toString(2);
+		else 
+	        return (~decValue).toString(2);
+	}
 
 	var toHex = function(number) {
 		number = number.toString(16).toUpperCase();
@@ -155,10 +195,18 @@ var Compiler = function(){
 	};
 
 	var Core = function(){
-		var _core 		= this;
-		var sourses 	= {};
-		var destination = {};
-		var flags 		= {};
+		var _core 			= this;
+		var sourses 		= {};
+		var destination 	= {};
+		var flags 			= {};
+		var destinationData = [];
+		var sourseData		= [];
+
+		for(var i = 0; i < 32; i++)
+		{
+			destinationData[i] = 0;
+			sourseData[i] = 0;
+		}
 
 		flags.C = 0;
 		flags.Z = 0;
@@ -166,64 +214,65 @@ var Compiler = function(){
 		flags.E = 0;
 
 		sourses.R0  	= 0;
-		sourses.R1  	= 0;
-		sourses.R2  	= 0;
-		sourses.R3  	= 0;
-		sourses.R4  	= 0;
-		sourses.R5  	= 0;
-		sourses.R6  	= 0;
-		sourses.R7  	= 0;
-		sourses.R8  	= 0;
-		sourses.R9  	= 0;
-		sourses.R10 	= 0;
-		sourses.R11 	= 0;
-		sourses.R12 	= 0;
-		sourses.R13 	= 0;
-		sourses.R14 	= 0;
-		sourses.IP 		= 0;
-		sourses.LINK  	= 0;
-		sourses.ADD 	= 0;
-		sourses.ADDC 	= 0;
-		sourses.SUB 	= 0;
-		sourses.XOR 	= 0;
-		sourses.AND 	= 0;
-		sourses.STATE 	= 0;
-		sourses.PIN 	= 0;
-		sourses.CONST10 = 0;
-		sourses.CONST16 = 0;
+		sourses.R1  	= 1;
+		sourses.R2  	= 2;
+		sourses.R3  	= 3;
+		sourses.R4  	= 4;
+		sourses.R5  	= 5;
+		sourses.R6  	= 6;
+		sourses.R7  	= 7;
+		sourses.R8  	= 8;
+		sourses.R9  	= 9;
+		sourses.R10 	= 10;
+		sourses.R11 	= 11;
+		sourses.R12 	= 12;
+		sourses.R13 	= 13;
+		sourses.R14 	= 14;
+		sourses.IP 		= 15;
+		sourses.LINK  	= 16;
+		sourses.ADD 	= 17;
+		sourses.ADDC 	= 18;
+		sourses.SUB 	= 19;
+		sourses.XOR 	= 20;
+		sourses.AND 	= 21;
+		sourses.STATE 	= 22;
+		sourses['SH.R'] = 23;
+		sourses.PIN 	= 24;
+		sourses.CONST10 = 25;
+		sourses.CONST16 = 26;
 
 		destination.R0  	= 0;
-		destination.R1  	= 0;
-		destination.R2  	= 0;
-		destination.R3 	 	= 0;
-		destination.R4  	= 0;
-		destination.R5  	= 0;
-		destination.R6  	= 0;
-		destination.R7  	= 0;
-		destination.R8  	= 0;
-		destination.R9  	= 0;
-		destination.R10 	= 0;
-		destination.R11 	= 0;
-		destination.R12 	= 0;
-		destination.R13	 	= 0;
-		destination.R14 	= 0;
-		destination.IP  	= 0;
-		destination.ADDR 	= 0;
-		destination.DATA 	= 0;
-		destination["ADD.A"] 	= 32000;
-		destination["ADD.B"] 	= 1000;
-		destination["AND.A"] 	= 0;
-		destination["AND.B"] 	= 0;
-		destination["SUB.A"]	= 0;
-		destination["SUB.B"] 	= 0;
-		destination.SH 			= 0;
-		destination["ADDC.A"] 	= 0;
-		destination["ADDC.B"] 	= 0;
-		destination["XOR.A"] 	= 0;
-		destination["XOR.B"] 	= 0;
-		destination.STATE 		= 0;
-		destination.POUT 		= 0;
-		destination.NULL 		= 0;
+		destination.R1  	= 1;
+		destination.R2  	= 2;
+		destination.R3 	 	= 3;
+		destination.R4  	= 4;
+		destination.R5  	= 5;
+		destination.R6  	= 6;
+		destination.R7  	= 7;
+		destination.R8  	= 8;
+		destination.R9  	= 9;
+		destination.R10 	= 10;
+		destination.R11 	= 11;
+		destination.R12 	= 12;
+		destination.R13	 	= 13;
+		destination.R14 	= 14;
+		destination.IP  	= 15;
+		destination.ADDR 	= 16;
+		destination.DATA 	= 17;
+		destination["ADD.A"] 	= 18;
+		destination["ADD.B"] 	= 19;
+		destination["AND.A"] 	= 20;
+		destination["AND.B"] 	= 21;
+		destination["SUB.A"]	= 22;
+		destination["SUB.B"] 	= 23;
+		destination.SH 			= 24;
+		destination["ADDC.A"] 	= 25;
+		destination["ADDC.B"] 	= 26;
+		destination["XOR.A"] 	= 27;
+		destination["XOR.B"] 	= 28;
+		destination.STATE 		= 29;
+		destination.POUT 		= 30;
+		destination.NULL 		= 31;
 
 		var checkFlags = function(value){
 			(value > 0x8000) ? flags.S = 1 : flags.S = 0;
@@ -313,15 +362,115 @@ var Compiler = function(){
 			return commands;
 		};
 
+		var get10bitFromConst = function(value){
+			var bin = toBin(value);
+			var dt = 16 - bin.length;
+			var n = '';
+			for(var i = 0; i < dt; i++)
+				n += '0';
+			bin = n + bin;
+			return bin.substring(6,16);
+		};
+
+		var getFlagBits = function(value){
+			var bits = '0';
+			switch(value)
+			{
+				case '': 
+					bits = '000';
+					break;
+				case 'NZ?': 
+					bits = '010';
+					break;
+				case 'Z?': 
+					bits = '001';
+					break;
+				case 'C?': 
+					bits = '011';
+					break;
+				case 'NC?': 
+					bits = '100';
+					break;
+				case 'S?': 
+					bits = '101';
+					break;
+				case 'E?': 
+					bits = '110';
+					break;
+				default:
+					bits = value;
+					break;
+			}
+
+			return bits;
+		}
+
+		var drawSlots = function(slots){
+
+			if(slots[0] !== null)
+			{
+				if(slots[0].const10 !== undefined){
+					SlotsTable.values.slot0src.innerHTML = slots[0].const10.substring(5,10);
+					SlotsTable.values.slot0dst.innerHTML = slots[0].const10.substring(0,5);
+					SlotsTable.exp.slot0src.innerHTML = "const10 5bit (low)";
+					SlotsTable.exp.slot0dst.innerHTML = "const10 5bit (high)";
+				}
+				else if(slots[0].const16 !== undefined){
+					SlotsTable.values.slot0src.innerHTML = slots[0].const16.substring(5,10);
+					SlotsTable.values.slot0dst.innerHTML = slots[0].const16.substring(0,5);
+					SlotsTable.exp.slot0src.innerHTML = "const16 5bit (low)";
+					SlotsTable.exp.slot0dst.innerHTML = "const16 5bit (high)";
+				}
+				else
+				{
+					SlotsTable.values.slot0src.innerHTML = sourses[slots[0].src];
+					SlotsTable.values.slot0dst.innerHTML = destination[slots[0].dst];
+					SlotsTable.exp.slot0src.innerHTML = slots[0].src;
+					SlotsTable.exp.slot0dst.innerHTML = slots[0].dst;
+				}
+			}
+
+			if(slots[1] != null)
+			{
+				SlotsTable.values.slot1src.innerHTML = sourses[slots[1].src];
+				SlotsTable.values.slot1dst.innerHTML = destination[slots[1].dst];
+				SlotsTable.exp.slot1src.innerHTML = slots[1].src;
+				SlotsTable.exp.slot1dst.innerHTML = slots[1].dst;
+				SlotsTable.values.slot1cdtn.innerHTML = getFlagBits(slots[1].cdtn);
+			}
+
+			if(slots[2] != null)
+			{
+				SlotsTable.values.slot2src.innerHTML = sourses[slots[2].src];
+				SlotsTable.values.slot2dst.innerHTML = destination[slots[2].dst];
+				SlotsTable.exp.slot2src.innerHTML = slots[2].src;
+				SlotsTable.exp.slot2dst.innerHTML = slots[2].dst;
+				SlotsTable.values.slot2cdtn.innerHTML = getFlagBits(slots[2].cdtn);
+			}
+
+			if(slots[0].const16 === undefined){
+
+				if(slots[2].cdtn === '')
+				   SlotsTable.exp.slot2cdtn.innerHTML = '-';
+				else
+				   SlotsTable.exp.slot2cdtn.innerHTML = slots[2].cdtn;
+
+				if(slots[1].cdtn === '')
+					SlotsTable.exp.slot1cdtn.innerHTML = '-';
+				else
+					SlotsTable.exp.slot1cdtn.innerHTML = slots[1].cdtn;
+			}
+		};
+
 		var getBundleSlots = function(bundle){
 			var commands = parseBundle(bundle);
 			var slots = [];
 			var parsedCommands = [];
 
-			if(commands.length < 3){
+			/*if(commands.length < 3){
 				for (var i = commands.length; i < 3; i++)
 					commands.push("R1->NULL");
-			}
+			}*/
 
 			for(var i = 0; i < commands.length; i++)
 				parsedCommands.push(parseCommand(commands[i]));
@@ -335,35 +484,46 @@ var Compiler = function(){
 				var const16E = false;
 				var const10E = false;
 
-				var const16A = -1;
-				var const10A = -1;
+				var const16A = null;
+				var const10A = null;
 
 				for(var i = 0; i < parsedCommands.length; i++){
 					var cmd = parsedCommands[i];
-					if(cmd.const10) const10A  = i;
-					if(cmd.const16) const16A  = i;
+					if(cmd.const10) const10A  = parsedCommands[i];
+					if(cmd.const16) const16A  = parsedCommands[i];
 				}
 
-				parsedCommands.splice(const10A,1);
-				parsedCommands.splice(const16A,1);
-
-				if(const10A > -1)
-				{
-					var cmd = parsedCommands[const10A];
-					slot0 = {const10:get10bitFromConst(cmd.src)};
-					slot1 = {src: sourses.const10, dst:cmd.dst, cdtn:cmd.cdtn};
+				if(const10A !== null){
+					var idx = parsedCommands.indexOf(const10A);
+					parsedCommands.splice(idx, 1);
 				}
 
-				if(const16A > -1)
-				{
-					var cmd = parsedCommands[const16A];
-					slot0 = {const10:get10bitFromConst(cmd.src)};
-					slot1 = {cdtn:get3bitFromConst(cmd.src)};
-					slot2 = {cdtn:get3bitFromConst(cmd.src)};
+				if(const16A !== null){
+					var idx = parsedCommands.indexOf(const16A);
+					parsedCommands.splice(idx, 1);
 				}
 
-				if(const10A === -1 && const16A === -1)
+				if(const10A !== null)
 				{
+					slot0 = {const10:get10bitFromConst(const10A.src)};
+					slot1 = {src:"CONST10", dst:const10A.dst, cdtn:const10A.cdtn};
+				}
+
+				if(const16A !== null)
+				{
+					slot0 = {const10:get10bitFromConst(CONST16A.src)};
+					slot1 = {src:"CONST16", dst:const16A.dst, cdtn:get3bitFromConst(CONST16A.src)};
+					slot2 = {cdtn:get3bitFromConst(CONST16A.src)};
+				}
+
+				if(const10A !== null || const16A !== null)
+				{
+					if(parsedCommands.length > 1)
+						errorCanvas.drawText('Console 12pt', 'ERROR: const defined only 1 commands avaliable...', 5, 20, '#000');
+				}
+
+				if(const10A === null && const16A === null)
+				{	
 					for(var i = 0; i < parsedCommands.length; i++){
 						var cmd = parsedCommands[i];
 
@@ -372,29 +532,47 @@ var Compiler = function(){
 						else if(slot1 === null)
 							slot1 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}
 						else if(slot2 === null)
-							slot2 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}				
+							slot2 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}
+						else
+							errorCanvas.drawText('Console 12pt', 'ERROR: all slots full.', 5, 20, '#000');				
 					}
 				}
 				else
 				{
 					if(const10A)
 					{
-						if(slot2 === null)
-							slot2 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}	
+						for(var i = 0; i < parsedCommands.length; i++){
+							var cmd = parsedCommands[i];
+							if(slot2 === null)
+								slot2 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}	
+						}
 					}
 					else if(const16A)
 					{
-						if(cmd.cdtn !== '')
-							console.log('ERROR: CONST16 defined condition bits disabled...');
-						else
-						{
-							if(slot1.src === undefined && slot1.dst === undefined)
-								slot1 = {src:cmd.src, dst:cmd.dst}
-							else if(slot2.src === undefined && slot2.dst === undefined)
-								slot2 = {src:cmd.src, dst:cmd.dst}
+						for(var i = 0; i < parsedCommands.length; i++){
+							var cmd = parsedCommands[i];
+							if(cmd.cdtn !== '')
+								errorCanvas.drawText('Console 12pt', 'ERROR: CONST16 defined condition bits disabled...', 5, 20, '#000');	
+
+							else
+							{
+								if(slot2.src === undefined && slot2.dst === undefined)
+								   slot2 = {src:cmd.src, dst:cmd.dst}
+							}
 						}
 					}
-				}	
+				}
+
+			if(slot1 === null)
+				slot1 = {src:'R0', dst:'NULL', cdtn:''};
+
+			if(slot2 === null)
+				slot2 = {src:'R0', dst:'NULL', cdtn:''};	
+
+			slots[0] = slot0;
+			slots[1] = slot1;
+			slots[2] = slot2;
+
 			return slots;
 		};
 
@@ -403,6 +581,7 @@ var Compiler = function(){
 		_core.drawRegisters = function(){
 			destroyChildren(srcTable);
 			destroyChildren(dstTable);
+			destroyChildren(flgTable);
 
 			var c = 0;
 
@@ -420,7 +599,7 @@ var Compiler = function(){
 
 				var val = document.createElement('td');
 				reg.innerHTML = p;		
-				val.innerHTML = toHex(destination[p]);
+				val.innerHTML = toHex(destinationData[destination[p]]);
 				row.appendChild(addr);
 				row.appendChild(reg);
 				row.appendChild(val);
@@ -443,7 +622,7 @@ var Compiler = function(){
 
 					var val = document.createElement('td');
 					reg.innerHTML = p;		
-					val.innerHTML = toHex(sourses[p]);
+					val.innerHTML = toHex(sourseData[sourses[p]]);
 					row.appendChild(addr);
 					row.appendChild(reg);
 					row.appendChild(val);
@@ -478,26 +657,26 @@ var Compiler = function(){
 		};
 
 		_core.update = function(){
-			sourses.ADD  = destination["ADD.A"]  + destination["ADD.B"];
-			sourses.ADDC = destination["ADDC.A"] + destination["ADDC.B"] + flags.C;
-			sourses.SUB  = destination["SUB.B"]  - destination["SUB.A"];
-			sourses.XOR  = destination["XOR.B"]  ^ destination["XOR.A"];
+			sourseData[sourses.ADD]  = destinationData[destination["ADD.A"]]  + destinationData[destination["ADD.B"]];
+			sourseData[sourses.ADDC] = destinationData[destination["ADDC.A"]] + destinationData[destination["ADDC.B"]] + flags.C;
+			sourseData[sourses.SUB]  = destinationData[destination["SUB.B"]]  - destinationData[destination["SUB.A"]];
+			sourseData[sourses.XOR]  = destinationData[destination["XOR.B"]]  ^ destinationData[destination["XOR.A"]];
 			//hardRegisters[i] = hardRegisters[i] % 0x10000
 		};
 
 		_core.refresh = function(){
-			//'R2->R1, R3->R5, R7->R10'
-			//'R2->R1, NZ? R3->R5, C? R7->R10'
-
-			var slots = getBundleSlots('R8->R1, #20->R5, C? R7->R10');
-			executeSlots(slots);
+			//executeSlots(slots);
 			core.update();
 			core.drawRegisters();
 		};
 
 		_core.step = function(){
+			errorCanvas.clearColor('#fcc');
 			var s = codeEditor.step();
 			currentCommand.innerHTML = s;
+			var slots = getBundleSlots(s);
+			drawSlots(slots);
+			_core.refresh();
 		};
 
 		_core.runCommand = function(command){
@@ -510,12 +689,30 @@ var Compiler = function(){
 		};
 
 		_core.reset = function(){
-			for(var p in destination){
-				destination[p] = 0;
-			}
 
-			for(var p in sourses){
-				sourses[p] = 0;
+			SlotsTable.values.slot0src.innerHTML = '*';
+			SlotsTable.values.slot0dst.innerHTML = '*';
+			SlotsTable.exp.slot0src.innerHTML = '*';
+			SlotsTable.exp.slot0dst.innerHTML = '*';
+
+			SlotsTable.values.slot1src.innerHTML = '*';
+			SlotsTable.values.slot1dst.innerHTML = '*';
+			SlotsTable.exp.slot1src.innerHTML = '*';
+			SlotsTable.exp.slot1dst.innerHTML = '*';
+			SlotsTable.values.slot1cdtn.innerHTML = '*';
+			SlotsTable.exp.slot1cdtn.innerHTML = '*';
+
+			SlotsTable.values.slot2src.innerHTML = '*';
+			SlotsTable.values.slot2dst.innerHTML = '*';
+			SlotsTable.exp.slot2src.innerHTML ='*';
+			SlotsTable.exp.slot2dst.innerHTML = '*';
+			SlotsTable.values.slot2cdtn.innerHTML = '*';
+			SlotsTable.exp.slot2cdtn.innerHTML = '*';
+	
+			for(var i = 0; i < 32; i++)
+			{
+				destinationData[i] = 0;
+				sourseData[i] 	   = 0;
 			}
 			codeEditor.reset();
 		};
