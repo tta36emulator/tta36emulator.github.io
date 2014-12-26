@@ -128,7 +128,7 @@ var Compiler = function(){
 	errorCanvas.drawText('Console 12pt', 'ERROR', 5, 10, '#000');
 
 	codeEditor.refresh();
-	codeEditor.loadCode("R1->R2\nR1->R2, R3->R4, R5->R6\nZ? R1->R2, R3->R4, R5->R6\nZ? R1->R2, NZ? R3->R4, R5->R6\n#10->R7\n#10->R7,R10->R11");
+	codeEditor.loadCode("#15000->R2\n#15000->R2, R5->R7\nR1->R2, R3->R4, R5->R6\nZ? R1->R2, R3->R4, R5->R6\nZ? R1->R2, NZ? R3->R4, R5->R6\n#10->R7\n#10->R7,R10->R11");
 
 	var zeroFill  = function( number, width )
 	{
@@ -376,6 +376,16 @@ var Compiler = function(){
 			return bin.substring(6,16);
 		};
 
+		var get16bitFromConst = function(value){
+			var bin = toBin(value);
+			var dt = 16 - bin.length;
+			var n = '';
+			for(var i = 0; i < dt; i++)
+				n += '0';
+			bin = n + bin;
+			return bin;
+		};
+
 		var getFlagBits = function(value){
 			var bits = '0';
 			switch(value)
@@ -464,6 +474,11 @@ var Compiler = function(){
 				else
 					SlotsTable.exp.slot1cdtn.innerHTML = slots[1].cdtn;
 			}
+			else
+			{
+				SlotsTable.exp.slot2cdtn.innerHTML = 'Const16 3bit';
+				SlotsTable.exp.slot1cdtn.innerHTML = 'Const16 3bit';
+			}
 		};
 
 		var getBundleSlots = function(bundle){
@@ -515,9 +530,10 @@ var Compiler = function(){
 
 				if(const16A !== null)
 				{
-					slot0 = {const10:get10bitFromConst(CONST16A.src)};
-					slot1 = {src:"CONST16", dst:const16A.dst, cdtn:get3bitFromConst(CONST16A.src)};
-					slot2 = {cdtn:get3bitFromConst(CONST16A.src)};
+					var s = get16bitFromConst(const16A.src);
+					slot0 = {const16:s.substring(6,16)};
+					slot1 = {src:"CONST16", dst:const16A.dst, cdtn:s.substring(3,6)};
+					slot2 = {cdtn:s.substring(0,3)};
 				}
 
 				if(const10A !== null || const16A !== null)
@@ -557,11 +573,10 @@ var Compiler = function(){
 							var cmd = parsedCommands[i];
 							if(cmd.cdtn !== '')
 								errorCanvas.drawText('Console 12pt', 'ERROR: CONST16 defined condition bits disabled...', 5, 20, '#000');	
-
 							else
 							{
 								if(slot2.src === undefined && slot2.dst === undefined)
-								   slot2 = {src:cmd.src, dst:cmd.dst}
+								   slot2 = {src:cmd.src, dst:cmd.dst, cdtn:slot2.cdtn}
 							}
 						}
 					}
