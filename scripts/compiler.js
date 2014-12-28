@@ -88,6 +88,7 @@ var Compiler = function(){
 	var dstTable  = document.getElementById('dstTable');
 	var srcTable  = document.getElementById('srcTable');
 	var flgTable  = document.getElementById('flgTable');
+	var binBundle = document.getElementById('binaryBundle');
 
 	var SlotsTable = {
 		values:{
@@ -128,7 +129,7 @@ var Compiler = function(){
 	errorCanvas.drawText('Console 12pt', 'ERROR', 5, 10, '#000');
 
 	codeEditor.refresh();
-	codeEditor.loadCode("#15000->R2\n#15000->R2, R5->R7\nR1->R2, R3->R4, R5->R6\nZ? R1->R2, R3->R4, R5->R6\nZ? R1->R2, NZ? R3->R4, R5->R6\n#10->R7\n#10->R7,R10->R11");
+	codeEditor.loadCode("LINK -> R14, R2 -> ADDC.A, R2 -> ADDC.B\nR1 -> ADD.B, ADDC -> ADDC.A, ADDC -> ADDC.B\n#0x000F -> AND.A, R1 -> ADD.A\nADDC -> R5, ADD -> ADD.A, ADD -> ADD.B\nR5 -> ADDC.A, ADD -> ADD.A, ADD -> ADD.B\nR5 -> ADDC.B, ADD -> ADD.A, ADD -> ADD.B\nADDC -> R5, ADD -> ADD.A, ADD -> ADD.B\nR5 -> ADDC.A, ADD -> ADD.A, ADD -> ADD.B\nR5 -> ADDC.B, ADD -> ADD.A, ADD -> ADD.B\nR0 -> SH, ADD -> ADD.A, ADD -> ADD.B\nSH.R => ADD.B, ADD -> ADD.A, ADDC -> R5\nNC? #0x00F0 -> AND.A, ADD -> ADDR\nNC? R5 -> R2, DATA -> AND.B\nR14 -> IP, AND -> DATA, R2 -> DATA\n");
 
 	var zeroFill  = function( number, width )
 	{
@@ -200,11 +201,28 @@ var Compiler = function(){
 
 	var Core = function(){
 		var _core 			= this;
-		var sourses 		= {};
-		var destination 	= {};
 		var flags 			= {};
 		var destinationData = [];
 		var sourseData		= [];
+
+		var slot0_src = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","IP","DATA","ADD","ADDC",
+						 "SUB","XOR","AND","STATE","SH.R","P.IN"];
+
+		var slot1_src = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","IP","DATA","ADD","ADDC",
+						 "SUB","XOR","AND","STATE","SH.R","P.IN","CONST10","CONST16"];
+
+		var slot2_src = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","IP","LINK","ADD","ADDC",
+						 "SUB","XOR","AND","STATE","SH.R","P.IN","CONST10","CONST16"];
+
+		var slot0_dst = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","IP","pADDR","DATA","ADD.A",
+						 "ADD.B","AND.A","AND.B","SUB.A","SUB.B","SH","ADDC.A","ADDC.B","XOR.A","XOR.B","STATE","P.OUT","NULL"];
+
+		var slot1_dst = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","IP","pADDR","DATA","ADD.A",
+						 "ADD.B","AND.A","AND.B","SUB.A","SUB.B","SH","ADDC.A","ADDC.B","XOR.A","XOR.B","STATE","P.OUT","NULL"];
+
+		var slot2_dst = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","IP","ADDR","DATA","ADD.A",
+						 "ADD.B","AND.A","AND.B","SUB.A","SUB.B","SH","ADDC.A","ADDC.B","XOR.A","XOR.B","STATE","P.OUT","NULL"];
+
 
 		for(var i = 0; i < 32; i++)
 		{
@@ -217,66 +235,33 @@ var Compiler = function(){
 		flags.S = 0;
 		flags.E = 0;
 
-		sourses.R0  	= 0;
-		sourses.R1  	= 1;
-		sourses.R2  	= 2;
-		sourses.R3  	= 3;
-		sourses.R4  	= 4;
-		sourses.R5  	= 5;
-		sourses.R6  	= 6;
-		sourses.R7  	= 7;
-		sourses.R8  	= 8;
-		sourses.R9  	= 9;
-		sourses.R10 	= 10;
-		sourses.R11 	= 11;
-		sourses.R12 	= 12;
-		sourses.R13 	= 13;
-		sourses.R14 	= 14;
-		sourses.IP 		= 15;
-		sourses.LINK  	= 16;
-		sourses.ADD 	= 17;
-		sourses.ADDC 	= 18;
-		sourses.SUB 	= 19;
-		sourses.XOR 	= 20;
-		sourses.AND 	= 21;
-		sourses.STATE 	= 22;
-		sourses['SH.R'] = 23;
-		sourses.PIN 	= 24;
-		sourses.CONST10 = 25;
-		sourses.CONST16 = 26;
+		var getSRC_ADDR = function(slot, src) {
+			switch(slot){
+				case 0:
+				 return slot0_src.indexOf(src);
+				 break;
+				case 1:
+				 return slot1_src.indexOf(src);
+				 break;
+				case 2:
+				 return slot2_src.indexOf(src);
+				 break;
+			}
+		}
 
-		destination.R0  	= 0;
-		destination.R1  	= 1;
-		destination.R2  	= 2;
-		destination.R3 	 	= 3;
-		destination.R4  	= 4;
-		destination.R5  	= 5;
-		destination.R6  	= 6;
-		destination.R7  	= 7;
-		destination.R8  	= 8;
-		destination.R9  	= 9;
-		destination.R10 	= 10;
-		destination.R11 	= 11;
-		destination.R12 	= 12;
-		destination.R13	 	= 13;
-		destination.R14 	= 14;
-		destination.IP  	= 15;
-		destination.ADDR 	= 16;
-		destination.DATA 	= 17;
-		destination["ADD.A"] 	= 18;
-		destination["ADD.B"] 	= 19;
-		destination["AND.A"] 	= 20;
-		destination["AND.B"] 	= 21;
-		destination["SUB.A"]	= 22;
-		destination["SUB.B"] 	= 23;
-		destination.SH 			= 24;
-		destination["ADDC.A"] 	= 25;
-		destination["ADDC.B"] 	= 26;
-		destination["XOR.A"] 	= 27;
-		destination["XOR.B"] 	= 28;
-		destination.STATE 		= 29;
-		destination.POUT 		= 30;
-		destination.NULL 		= 31;
+		var getDST_ADDR = function(slot, dst) {
+			switch(slot){
+				case 0:
+				 return slot0_dst.indexOf(dst);
+				 break;
+				case 1:
+				 return slot1_dst.indexOf(dst);
+				 break;
+				case 2:
+				 return slot2_dst.indexOf(dst);
+				 break;
+			}
+		}
 
 		var checkFlags = function(value){
 			(value > 0x8000) ? flags.S = 1 : flags.S = 0;
@@ -311,7 +296,7 @@ var Compiler = function(){
 						_cdtn = 'Z?';
 					}
 
-					else if(command.indexOf('C?') > -1){
+					else if(command.indexOf('C?') > -1 && command.indexOf('NC?') === -1){
 						command = command.replace("C?","").trim();
 						_cdtn = 'C?';
 					}
@@ -336,6 +321,12 @@ var Compiler = function(){
 			//############-SRC-DST-####################################
 				if(command.indexOf('->') > -1) {
 					var srcdst = command.split('->');
+					_src = srcdst[0].trim();
+					_dst = srcdst[1].trim();
+				}
+
+				if(command.indexOf('=>') > -1) {
+					var srcdst = command.split('=>');
 					_src = srcdst[0].trim();
 					_dst = srcdst[1].trim();
 				}
@@ -374,6 +365,16 @@ var Compiler = function(){
 				n += '0';
 			bin = n + bin;
 			return bin.substring(6,16);
+		};
+
+		var get5bitFromConst = function(value){
+			var bin = toBin(value);
+			var dt = 5 - bin.length;
+			var n = '';
+			for(var i = 0; i < dt; i++)
+				n += '0';
+			bin = n + bin;
+			return bin;
 		};
 
 		var get16bitFromConst = function(value){
@@ -426,19 +427,19 @@ var Compiler = function(){
 				if(slots[0].const10 !== undefined){
 					SlotsTable.values.slot0src.innerHTML = slots[0].const10.substring(5,10);
 					SlotsTable.values.slot0dst.innerHTML = slots[0].const10.substring(0,5);
-					SlotsTable.exp.slot0src.innerHTML = "const10 5bit (low)";
-					SlotsTable.exp.slot0dst.innerHTML = "const10 5bit (high)";
+					SlotsTable.exp.slot0src.innerHTML = "c10 5bit (l)";
+					SlotsTable.exp.slot0dst.innerHTML = "c10 5bit (h)";
 				}
 				else if(slots[0].const16 !== undefined){
 					SlotsTable.values.slot0src.innerHTML = slots[0].const16.substring(5,10);
 					SlotsTable.values.slot0dst.innerHTML = slots[0].const16.substring(0,5);
-					SlotsTable.exp.slot0src.innerHTML = "const16 5bit (low)";
-					SlotsTable.exp.slot0dst.innerHTML = "const16 5bit (high)";
+					SlotsTable.exp.slot0src.innerHTML = "c16 5bit (l)";
+					SlotsTable.exp.slot0dst.innerHTML = "c16 5bit (h)";
 				}
 				else
 				{
-					SlotsTable.values.slot0src.innerHTML = sourses[slots[0].src];
-					SlotsTable.values.slot0dst.innerHTML = destination[slots[0].dst];
+					SlotsTable.values.slot0src.innerHTML = getSRC_ADDR(0, slots[0].src);
+					SlotsTable.values.slot0dst.innerHTML = getDST_ADDR(0, slots[0].dst);
 					SlotsTable.exp.slot0src.innerHTML = slots[0].src;
 					SlotsTable.exp.slot0dst.innerHTML = slots[0].dst;
 				}
@@ -446,8 +447,8 @@ var Compiler = function(){
 
 			if(slots[1] != null)
 			{
-				SlotsTable.values.slot1src.innerHTML = sourses[slots[1].src];
-				SlotsTable.values.slot1dst.innerHTML = destination[slots[1].dst];
+				SlotsTable.values.slot1src.innerHTML = getSRC_ADDR(1, slots[1].src);
+				SlotsTable.values.slot1dst.innerHTML = getDST_ADDR(1, slots[1].dst);
 				SlotsTable.exp.slot1src.innerHTML = slots[1].src;
 				SlotsTable.exp.slot1dst.innerHTML = slots[1].dst;
 				SlotsTable.values.slot1cdtn.innerHTML = getFlagBits(slots[1].cdtn);
@@ -455,8 +456,8 @@ var Compiler = function(){
 
 			if(slots[2] != null)
 			{
-				SlotsTable.values.slot2src.innerHTML = sourses[slots[2].src];
-				SlotsTable.values.slot2dst.innerHTML = destination[slots[2].dst];
+				SlotsTable.values.slot2src.innerHTML = getSRC_ADDR(2, slots[2].src);
+				SlotsTable.values.slot2dst.innerHTML = getDST_ADDR(2, slots[2].dst);
 				SlotsTable.exp.slot2src.innerHTML = slots[2].src;
 				SlotsTable.exp.slot2dst.innerHTML = slots[2].dst;
 				SlotsTable.values.slot2cdtn.innerHTML = getFlagBits(slots[2].cdtn);
@@ -476,9 +477,54 @@ var Compiler = function(){
 			}
 			else
 			{
-				SlotsTable.exp.slot2cdtn.innerHTML = 'Const16 3bit';
-				SlotsTable.exp.slot1cdtn.innerHTML = 'Const16 3bit';
+				SlotsTable.exp.slot2cdtn.innerHTML = 'C16 3bit';
+				SlotsTable.exp.slot1cdtn.innerHTML = 'C16 3bit';
 			}
+
+			var ss0 = 0;
+			var sd0 = 0;
+
+			var ss1 = 0;
+			var sd1 = 0;
+			var sc1 = '000';
+
+			var ss2 = 0;
+			var sd2 = 0;
+			var sc2 = '000';
+
+			if(slots[0].src !== undefined && slots[0].dst !== undefined)
+			{
+				ss0 = get5bitFromConst(getSRC_ADDR(0,slots[0].src));
+				sd0 = get5bitFromConst(getDST_ADDR(0,slots[0].dst));
+			}
+			else if(slots[0].const16 !== undefined)
+				ss0 = slots[0].const16;
+
+			else if (slots[0].const10 !== undefined)
+				ss0 = slots[0].const10;
+
+			if(slots[1].src !== undefined && slots[1].dst !== undefined)
+			{
+				ss1 = get5bitFromConst(getSRC_ADDR(1,slots[1].src));
+				sd1 = get5bitFromConst(getDST_ADDR(1,slots[1].dst));
+
+				if(slots[1].cdtn !== '')
+					sc1 = getFlagBits(slots[1].cdtn);
+			}
+
+			if(slots[2].src !== undefined && slots[2].dst !== undefined)
+			{
+				ss2 = get5bitFromConst(getSRC_ADDR(2,slots[2].src));
+				sd2 = get5bitFromConst(getDST_ADDR(2,slots[2].dst));
+				if(slots[2].cdtn !== '')
+					sc2 = getFlagBits(slots[2].cdtn);
+			}
+
+			var sr0 = sd0 + ss0;
+			var sr1 = sc1 + sd1 + ss1;
+			var sr2 = sc2 + sd2 + ss2;
+
+			binBundle.innerHTML = sr2 + sr1 + sr0;
 		};
 
 		var getBundleSlots = function(bundle){
@@ -526,18 +572,45 @@ var Compiler = function(){
 				{
 					slot0 = {const10:get10bitFromConst(const10A.src)};
 					slot1 = {src:"CONST10", dst:const10A.dst, cdtn:const10A.cdtn};
-				}
 
-				if(const16A !== null)
-				{
+					var s = get16bitFromConst(const10A.src);
+					slot0 = {const10:s.substring(6,16)};
+					
+					if(getDST_ADDR(1, const10A.dst) > -1){	
+						slot1 = {};
+						slot1.src = "CONST10";
+						slot1.dst  = const10A.dst;
+						slot1.cdtn = const10A.cdtn;
+					}
+					else if(getDST_ADDR(2, const10A.dst) > -1){	
+						slot2 = {};		
+						slot2.src = "CONST10";
+						slot2.dst  = const10A.dst;
+						slot2.cdtn = const10A.cdtn;
+					}	
+				}
+				else if(const16A !== null){
 					var s = get16bitFromConst(const16A.src);
 					slot0 = {const16:s.substring(6,16)};
-					slot1 = {src:"CONST16", dst:const16A.dst, cdtn:s.substring(3,6)};
-					slot2 = {cdtn:s.substring(0,3)};
+					slot1 = {};
+					slot2 = {};
+
+					if(getDST_ADDR(1, const16A.dst) > -1){	
+						slot1.src = "CONST16";
+						slot1.dst = const16A.dst;
+					}
+					else if(getDST_ADDR(2, const16A.dst) > -1){			
+						slot2.src = "CONST16";
+						slot2.dst = const16A.dst;
+					}
+
+					slot1.cdtn = s.substring(3,6);
+					slot2.cdtn = s.substring(0,3);
 				}
 
 				if(const10A !== null || const16A !== null)
 				{
+					//Если есть константа и запись вида: #100->R1, R2->R3, R4->R5, т.е. осталась лишняя команда
 					if(parsedCommands.length > 1)
 						errorCanvas.drawText('Console 12pt', 'ERROR: const defined only 1 commands avaliable...', 5, 20, '#000');
 				}
@@ -547,14 +620,14 @@ var Compiler = function(){
 					for(var i = 0; i < parsedCommands.length; i++){
 						var cmd = parsedCommands[i];
 
-						if(cmd.cdtn === '' && slot0 === null) 
-							slot0 = {src:cmd.src, dst:cmd.dst}
-						else if(slot1 === null)
+						if(slot0 === null && getSRC_ADDR(0, cmd.src) > -1 && getDST_ADDR(0, cmd.dst) > -1 && cmd.cdtn === '')
+							slot0 = {src:cmd.src, dst:cmd.dst};
+						else if(slot1 === null && getSRC_ADDR(1, cmd.src) > -1 && getDST_ADDR(1, cmd.dst) > -1)
 							slot1 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}
-						else if(slot2 === null)
+						else if(slot2 === null && getSRC_ADDR(2, cmd.src) > -1 && getDST_ADDR(2, cmd.dst) > -1)
 							slot2 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}
 						else
-							errorCanvas.drawText('Console 12pt', 'ERROR: all slots full.', 5, 20, '#000');				
+							errorCanvas.drawText('Console 12pt', 'ERROR: all slots full.', 5, 20, '#000');			
 					}
 				}
 				else
@@ -575,17 +648,19 @@ var Compiler = function(){
 								errorCanvas.drawText('Console 12pt', 'ERROR: CONST16 defined condition bits disabled...', 5, 20, '#000');	
 							else
 							{
-								if(slot2.src === undefined && slot2.dst === undefined)
-								   slot2 = {src:cmd.src, dst:cmd.dst, cdtn:slot2.cdtn}
+								if(slot1.src === undefined && slot1.dst === undefined)
+								   slot1 = {src:cmd.src, dst:cmd.dst, cdtn:slot1.cdtn};
+								else if(slot2.src === undefined && slot2.dst === undefined)
+								   slot2 = {src:cmd.src, dst:cmd.dst, cdtn:slot2.cdtn};
 							}
 						}
 					}
 				}
 
-			if(slot1 === null)
+			if(slot1 === null || (slot1.src === undefined && slot1.dst === undefined))
 				slot1 = {src:'R0', dst:'NULL', cdtn:''};
 
-			if(slot2 === null)
+			if(slot2 === null || (slot2.src === undefined && slot2.dst === undefined))
 				slot2 = {src:'R0', dst:'NULL', cdtn:''};	
 
 			slots[0] = slot0;
@@ -606,7 +681,7 @@ var Compiler = function(){
 
 			createHeaders();
 
-			for(var p in destination){
+			/*for(var p in destination){
 				var row = document.createElement('tr');
 				row.setAttribute("id", "dst" + c);
 
@@ -624,9 +699,9 @@ var Compiler = function(){
 				row.appendChild(val);
 				dstTable.appendChild(row);
 				c++;
-			}
+			}*/
 
-			c = 0;
+			/*c = 0;
 			for(var p in sourses){
 				if(c > 16 && c < 22)
 				{
@@ -648,7 +723,7 @@ var Compiler = function(){
 					srcTable.appendChild(row);				
 				}
 				c++;
-			}
+			}*/
 
 			c = 0;
 			for(var p in flags){
@@ -672,14 +747,14 @@ var Compiler = function(){
 		_core.selectRow = function(prefix, num){
 			var id = prefix + num;
 			var row = document.getElementById(id);
-			row.style.backgroundColor = "#cfc";
+			//row.style.backgroundColor = "#cfc";
 		};
 
 		_core.update = function(){
-			sourseData[sourses.ADD]  = destinationData[destination["ADD.A"]]  + destinationData[destination["ADD.B"]];
-			sourseData[sourses.ADDC] = destinationData[destination["ADDC.A"]] + destinationData[destination["ADDC.B"]] + flags.C;
-			sourseData[sourses.SUB]  = destinationData[destination["SUB.B"]]  - destinationData[destination["SUB.A"]];
-			sourseData[sourses.XOR]  = destinationData[destination["XOR.B"]]  ^ destinationData[destination["XOR.A"]];
+			sourseData[getSRC_ADDR("ADD")]  = destinationData[getSRC_ADDR("ADD.A")]  + destinationData[getSRC_ADDR("ADD.B")];
+			sourseData[getSRC_ADDR("ADDC")] = destinationData[getSRC_ADDR("ADDC.A")] + destinationData[getSRC_ADDR("ADDC.A")] + flags.C;
+			sourseData[getSRC_ADDR("SUB")]  = destinationData[getSRC_ADDR("SUB.B")]  - destinationData[getSRC_ADDR("SUB.A")];
+			sourseData[getSRC_ADDR("XOR")]  = destinationData[getSRC_ADDR("XOR.B")]  ^ destinationData[getSRC_ADDR("XOR.A")];
 			//hardRegisters[i] = hardRegisters[i] % 0x10000
 		};
 
@@ -692,7 +767,7 @@ var Compiler = function(){
 		_core.step = function(){
 			errorCanvas.clearColor('#fcc');
 			var s = codeEditor.step();
-			currentCommand.innerHTML = s;
+			//currentCommand.innerHTML = s;
 			var slots = getBundleSlots(s);
 			drawSlots(slots);
 			_core.refresh();
@@ -700,11 +775,8 @@ var Compiler = function(){
 
 		_core.runCommand = function(command){
 			var parsed = parseCommand(command);
-
-			if(parsed.const10 || parsed.const16) //const
-			   destination[parsed.dst] = parsed.src;
-			else //source register
-			   destination[parsed.dst] = sourses[parsed.src];
+			if(!parsed.const10 && !parsed.const16) //const
+			   destinationData[parsed.dst] = sourseData[getSRC_ADDR(parsed.src)];
 		};
 
 		_core.reset = function(){

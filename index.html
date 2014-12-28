@@ -48,6 +48,8 @@
 						</table>	
 					</div> 
 				</div>
+				
+				<!--<label id = 'currentCommand' class = 'command'>0x00->0x00</label>-->
 
 				<div id="editorPane">
 					<table id = 'ttaWord' class = 'ttaWord'>
@@ -66,7 +68,7 @@
 							<td id ='slot1DSTExp'  class = 'regCol'> R4 </td>
 							<td id ='slot1SRCExp'  class = 'regCol'> R3 </td>
 							<td id ='slot0DSTExp'  class = 'regCol'> R2 </td>
-							<td id ='slot0SRCExp' class = 'regCol'>  R1 </td>
+							<td id ='slot0SRCExp' class = 'regCol'>  R1 </td>		
 						</tr>
 
 						<tr>
@@ -77,11 +79,16 @@
 							<td id ='slot1DSTVal'  class = 'regCol'> dst1 </td>
 							<td id ='slot1SRCVal'  class = 'regCol'> src1 </td>
 							<td id ='slot0DSTVal'  class = 'regCol'> dst0 </td>
-							<td id ='slot0SRCVal'  class = 'regCol'> src0 </td>
+							<td id ='slot0SRCVal'  class = 'regCol'> src0 </td>	
+						</tr>
+
+						<tr>
+							<td class = 'slot0'> BUNDLE </td>
+							<td class = 'Binary'> Binary </td>
+							<td id ='binaryBundle' class = 'Binary'> 000000000000000000000000000000000000 </td>
 						</tr>
 					</table>	
 
-					<label id = 'currentCommand' class = 'command'>0x00->0x00</label>
 					<div id="codePane"><textarea id="code"></textarea></div>
 					<div id="buttonPane">
 					 	<input id = "btnLoadProgram" class = "cbutton" type = "button" value = "Load Program" onclick = "core.loadProgram()">
