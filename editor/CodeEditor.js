@@ -59,7 +59,8 @@ var CodeEditor = function () {
 					   editStrings.push(i);
 				}
 
-				resultCode += lines[i] + "\n";
+				if (i != lines.length - 1)
+					resultCode += lines[i] + "\n";
 			 }
 
 			return resultCode;
