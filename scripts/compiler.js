@@ -282,6 +282,7 @@ var Compiler = function(){
 			var _cdtn = "";
 			var _c10 = false;
 			var _c16 = false;
+			var _sf  = false;
 
 			//############-condition-##################################
 				if(command.indexOf('?') > -1) 
@@ -329,6 +330,7 @@ var Compiler = function(){
 					var srcdst = command.split('=>');
 					_src = srcdst[0].trim();
 					_dst = srcdst[1].trim();
+					_sf  = true;
 				}
 			//############-SRC-DST-####################################
 
@@ -347,7 +349,7 @@ var Compiler = function(){
 				}
 			//############-Const10/16-#################################
 
-			return {src:_src, dst:_dst, cdtn:_cdtn, const10:_c10, const16: _c16}
+			return {src:_src, dst:_dst, cdtn:_cdtn, const10:_c10, const16:_c16, sf:_sf}
 		};
 
 		var parseBundle = function(bundle){
@@ -570,24 +572,43 @@ var Compiler = function(){
 
 				if(const10A !== null)
 				{
-					slot0 = {const10:get10bitFromConst(const10A.src)};
-					slot1 = {src:"CONST10", dst:const10A.dst, cdtn:const10A.cdtn};
-
 					var s = get16bitFromConst(const10A.src);
 					slot0 = {const10:s.substring(6,16)};
-					
-					if(getDST_ADDR(1, const10A.dst) > -1){	
-						slot1 = {};
-						slot1.src = "CONST10";
-						slot1.dst  = const10A.dst;
-						slot1.cdtn = const10A.cdtn;
+
+					if(parsedCommands.length === 1){
+						if(getDST_ADDR(1, parsedCommands[0].dst) > -1 && getSRC_ADDR(1, parsedCommands[0].src) > -1){
+							if(getDST_ADDR(2, const10A.dst) > -1){	
+								slot2 = {};		
+								slot2.src = "CONST10";
+								slot2.dst  = const10A.dst;
+								slot2.cdtn = const10A.cdtn;
+							}	
+						}
+						else if(getDST_ADDR(2, parsedCommands[0].dst) > -1 && getSRC_ADDR(2, parsedCommands[0].src) > -1){
+								if(getDST_ADDR(1, const10A.dst) > -1){	
+								slot1 = {};
+								slot1.src = "CONST10";
+								slot1.dst  = const10A.dst;
+								slot1.cdtn = const10A.cdtn;
+							}
+						}
 					}
-					else if(getDST_ADDR(2, const10A.dst) > -1){	
-						slot2 = {};		
-						slot2.src = "CONST10";
-						slot2.dst  = const10A.dst;
-						slot2.cdtn = const10A.cdtn;
-					}	
+					else{					
+						slot1 = {src:"CONST10", dst:const10A.dst, cdtn:const10A.cdtn};
+
+						if(getDST_ADDR(1, const10A.dst) > -1){	
+							slot1 = {};
+							slot1.src = "CONST10";
+							slot1.dst  = const10A.dst;
+							slot1.cdtn = const10A.cdtn;
+						}
+						else if(getDST_ADDR(2, const10A.dst) > -1){	
+							slot2 = {};		
+							slot2.src = "CONST10";
+							slot2.dst  = const10A.dst;
+							slot2.cdtn = const10A.cdtn;
+						}	
+					}
 				}
 				else if(const16A !== null){
 					var s = get16bitFromConst(const16A.src);
@@ -638,6 +659,8 @@ var Compiler = function(){
 							var cmd = parsedCommands[i];
 							if(slot2 === null)
 								slot2 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}	
+							else if(slot1=== null)
+								slot1 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}	
 						}
 					}
 					else if(const16A)
