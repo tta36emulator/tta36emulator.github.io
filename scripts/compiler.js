@@ -89,6 +89,7 @@ var Compiler = function(){
 	var srcTable  = document.getElementById('srcTable');
 	var flgTable  = document.getElementById('flgTable');
 	var binBundle = document.getElementById('binaryBundle');
+	var hexBundle = document.getElementById('hexBundle');
 
 	var SlotsTable = {
 		values:{
@@ -152,6 +153,10 @@ var Compiler = function(){
 	var toHex = function(number) {
 		number = number.toString(16).toUpperCase();
 	    return "0x" + zeroFill(number, 4);
+	};
+
+	var toHex2 = function(number) { 
+		return parseInt(number).toString(16);
 	};
 
 	var destroyChildren = function(node)
@@ -527,6 +532,7 @@ var Compiler = function(){
 			var sr2 = sc2 + sd2 + ss2;
 
 			binBundle.innerHTML = sr2 + sr1 + sr0;
+			hexBundle.innerHTML = toHex2(sr2 + sr1 + sr0);
 		};
 
 		var getBundleSlots = function(bundle){
