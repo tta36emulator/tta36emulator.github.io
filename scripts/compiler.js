@@ -638,18 +638,166 @@ var Compiler = function(){
 
 				if(const10A === null && const16A === null)
 				{	
+					var _candidats = [];
 					for(var i = 0; i < parsedCommands.length; i++){
 						var cmd = parsedCommands[i];
+						var candidats = [];
 
-						if(slot0 === null && getSRC_ADDR(0, cmd.src) > -1 && getDST_ADDR(0, cmd.dst) > -1 && cmd.cdtn === '')
+						if(cmd.cdtn === '' && getSRC_ADDR(0, cmd.src) > -1 && getDST_ADDR(0, cmd.dst) > -1)
+							candidats.push('slot0');
+
+						if(getSRC_ADDR(1, cmd.src) > -1 && getDST_ADDR(1, cmd.dst) > -1)
+							candidats.push('slot1');
+
+						if(getSRC_ADDR(2, cmd.src) > -1 && getDST_ADDR(2, cmd.dst) > -1)
+							candidats.push('slot2');
+
+						_candidats.push({cmd:parsedCommands[i], cdt:candidats});
+					}
+
+					var high   = [];
+					var midlle = [];
+					var low    = [];
+
+					for(var i = 0; i < _candidats.length; i++)
+					{
+						var cdt = _candidats[i].cdt;
+						if(cdt.length === 3)
+							low.push(_candidats[i]); 
+						else if(cdt.length === 2)
+							midlle.push(_candidats[i]); 
+						else if(cdt.length === 1)
+							high.push(_candidats[i]); 
+					}
+
+					for(var i = 0; i < high.length; i++)
+					{
+						var cmd = high[i].cmd;
+
+						for(var j = 0; j < high[i].cdt.length; j++)
+						{
+							var cdt = high[i].cdt[j];
+
+							if(cdt == 'slot0')
+							{
+								if(slot0 === null){
+									slot0 = {src:cmd.src, dst:cmd.dst};
+									break;
+								}
+								else
+									continue;
+							}
+
+							else if(cdt == 'slot1')
+							{
+								if(slot1 === null){
+									slot1 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}
+									break;
+								}
+								else
+									continue;
+							}
+
+							else if(cdt == 'slot2')
+							{
+								if(slot2 === null){
+									slot2 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}
+									break;
+								}
+								else
+									continue;
+							}
+						}
+					}
+
+					for(var i = 0; i < midlle.length; i++)
+					{
+						var cmd = midlle[i].cmd;
+
+						for(var j = 0; j < midlle[i].cdt.length; j++)
+						{
+							var cdt = midlle[i].cdt[j];
+
+							if(cdt == 'slot0')
+							{
+								if(slot0 === null){
+									slot0 = {src:cmd.src, dst:cmd.dst};
+									break;
+								}
+								else
+									continue;
+							}
+
+							else if(cdt == 'slot1')
+							{
+								if(slot1 === null){
+									slot1 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}
+									break;
+								}
+								else
+									continue;
+							}
+
+							else if(cdt == 'slot2')
+							{
+								if(slot2 === null){
+									slot2 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}
+									break;
+								}
+								else
+									continue;
+							}
+						}
+					}
+
+					for(var i = 0; i < low.length; i++)
+					{
+						var cmd = low[i].cmd;
+
+						for(var j = 0; j < low[i].cdt.length; j++)
+						{
+							var cdt = low[i].cdt[j];
+
+							if(cdt == 'slot0')
+							{
+								if(slot0 === null){
+									slot0 = {src:cmd.src, dst:cmd.dst};
+									break;
+								}
+								else
+									continue;
+							}
+
+							else if(cdt == 'slot1')
+							{
+								if(slot1 === null){
+									slot1 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}
+									break;
+								}
+								else
+									continue;
+							}
+
+							else if(cdt == 'slot2')
+							{
+								if(slot2 === null){
+									slot2 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}
+									break;
+								}
+								else
+									continue;
+							}
+						}
+					}
+
+						/*if(slot0 === null && getSRC_ADDR(0, cmd.src) > -1 && getDST_ADDR(0, cmd.dst) > -1 && cmd.cdtn === '')
 							slot0 = {src:cmd.src, dst:cmd.dst};
 						else if(slot1 === null && getSRC_ADDR(1, cmd.src) > -1 && getDST_ADDR(1, cmd.dst) > -1)
 							slot1 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}
 						else if(slot2 === null && getSRC_ADDR(2, cmd.src) > -1 && getDST_ADDR(2, cmd.dst) > -1)
 							slot2 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}
 						else
-							errorCanvas.drawText('Console 12pt', 'ERROR: all slots full.', 5, 20, '#000');			
-					}
+							errorCanvas.drawText('Console 12pt', 'ERROR: all slots full.', 5, 20, '#000');		*/	
 				}
 				else
 				{
