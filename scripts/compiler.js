@@ -538,11 +538,15 @@ var Compiler = function(){
 				ss0 = get5bitFromConst(getSRC_ADDR(0,slots[0].src));
 				sd0 = get5bitFromConst(getDST_ADDR(0,slots[0].dst));
 			}
-			else if(slots[0].const16 !== undefined)
+			else if(slots[0].const16 !== undefined){
 				ss0 = slots[0].const16;
+				sd0 = '';
+			}
 
-			else if (slots[0].const10 !== undefined)
+			else if (slots[0].const10 !== undefined){
 				ss0 = slots[0].const10;
+				sd0 = '';
+			}
 
 			if(slots[1].src !== undefined && slots[1].dst !== undefined)
 			{
