@@ -872,10 +872,10 @@ var Compiler = function(){
 					}
 				}
 
-			if(slot1 === null || (slot1.src === undefined && slot1.dst === undefined))
+			if(slot1 === null || (slot1.src === undefined && slot1.dst === undefined && slot1.cdtn === undefined))
 				slot1 = {src:'R0', dst:'NULL', cdtn:''};
 
-			if(slot2 === null || (slot2.src === undefined && slot2.dst === undefined))
+			if(slot2 === null || (slot2.src === undefined && slot2.dst === undefined && slot2.cdtn === undefined))
 				slot2 = {src:'R0', dst:'NULL', cdtn:''};	
 
 			slots[0] = slot0;
