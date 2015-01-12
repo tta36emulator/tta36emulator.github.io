@@ -605,18 +605,41 @@ var Compiler = function(){
 				var const16E = false;
 				var const10E = false;
 
+				var doubleConst10 = null;
 				var const16A = null;
 				var const10A = null;
 
+
 				for(var i = 0; i < parsedCommands.length; i++){
 					var cmd = parsedCommands[i];
-					if(cmd.const10) const10A  = parsedCommands[i];
-					if(cmd.const16) const16A  = parsedCommands[i];
+
+					if(const10A === null && cmd.const10) 
+						const10A  = parsedCommands[i];
+					else
+					{
+						if(const10A !== null && cmd.src === const10A.src)
+							doubleConst10 = parsedCommands[i];
+						else
+							errorCanvas.drawText('Console 12pt', 'ERROR: Const10 and Const10 not equals...', 5, 20, '#000');
+					}
+
+					if(cmd.const16) {
+						if(const16A === null)
+							const16A  = parsedCommands[i];
+						else
+							errorCanvas.drawText('Console 12pt', 'ERROR: Const16 already defined...', 5, 20, '#000');
+					}			
 				}
 
 				if(const10A !== null){
 					var idx = parsedCommands.indexOf(const10A);
 					parsedCommands.splice(idx, 1);
+
+					if(doubleConst10 != null)
+					{
+						idx = parsedCommands.indexOf(doubleConst10);
+						parsedCommands.splice(idx, 1);
+					}
 				}
 
 				if(const16A !== null){
@@ -652,20 +675,107 @@ var Compiler = function(){
 					else{					
 						slot1 = {src:"CONST10", dst:const10A.dst, cdtn:const10A.cdtn};
 
-						if(getDST_ADDR(1, const10A.dst) > -1){	
-							slot1 = {};
-							slot1.src = "CONST10";
-							slot1.dst  = const10A.dst;
-							slot1.cdtn = const10A.cdtn;
-							slot1.sf   = const10A.sf;
+						if(doubleConst10 === null){
+							if(getDST_ADDR(1, const10A.dst) > -1){
+								slot1 = {};
+								slot1.src = "CONST10";
+								slot1.dst  = const10A.dst;
+								slot1.cdtn = const10A.cdtn;
+								slot1.sf   = const10A.sf;
+							}
+							else if(getDST_ADDR(2, const10A.dst) > -1){	
+								slot2 = {};		
+								slot2.src = "CONST10";
+								slot2.dst  = const10A.dst;
+								slot2.cdtn = const10A.cdtn;
+								slot2.sf   = const10A.sf;
+							}	
 						}
-						else if(getDST_ADDR(2, const10A.dst) > -1){	
-							slot2 = {};		
-							slot2.src = "CONST10";
-							slot2.dst  = const10A.dst;
-							slot2.cdtn = const10A.cdtn;
-							slot2.sf   = const10A.sf;
-						}	
+						else
+						{
+							var c1 = "",
+								c2 = "";
+
+							if(getDST_ADDR(1, const10A.dst) > 1 && getDST_ADDR(2, const10A.dst) > 1)
+								c1 = "all";
+
+							if(getDST_ADDR(1, doubleConst10.dst) > -1 && getDST_ADDR(2, doubleConst10.dst) > -1)
+								c2 = "all";
+
+							else
+							{
+								if(getDST_ADDR(1, const10A.dst) === -1 && getDST_ADDR(2, const10A.dst) === -1)
+									c1 = "nothing";
+								else
+								{
+									if(getDST_ADDR(1, const10A.dst) === -1)
+										c1 = "slot2";
+									else
+										c1 = "slot1";
+								}
+
+								if(getDST_ADDR(1, doubleConst10.dst) === -1 && getDST_ADDR(2, doubleConst10.dst) === -1)
+									c2 = "nothing";
+								else
+								{
+									if(getDST_ADDR(1, doubleConst10.dst) === -1)
+										c2 = "slot2";
+									else
+										c2 = "slot1";
+								}
+							}
+
+							if(c1 === "all" && c2 === "all"){
+								slot1 = {};
+								slot1.src = "CONST10";
+								slot1.dst  = const10A.dst;
+								slot1.cdtn = const10A.cdtn;
+								slot1.sf   = const10A.sf;
+
+								slot2 = {};		
+								slot2.src = "CONST10";
+								slot2.dst  = doubleConst10.dst;
+								slot2.cdtn = doubleConst10.cdtn;
+								slot2.sf   = doubleConst10.sf;
+							}
+							else
+							{
+								if(c1 === "slot1")
+								{
+									slot1 = {};
+									slot1.src = "CONST10";
+									slot1.dst  = const10A.dst;
+									slot1.cdtn = const10A.cdtn;
+									slot1.sf   = const10A.sf;
+								}
+								else
+								{
+									slot2 = {};
+									slot2.src = "CONST10";
+									slot2.dst  = const10A.dst;
+									slot2.cdtn = const10A.cdtn;
+									slot2.sf   = const10A.sf;
+								}
+
+								if(c2 === "slot1")
+								{
+									slot1 = {};		
+									slot1.src = "CONST10";
+									slot1.dst  = doubleConst10.dst;
+									slot1.cdtn = doubleConst10.cdtn;
+									slot1.sf   = doubleConst10.sf;
+								}
+								else
+								{
+									slot2 = {};		
+									slot2.src = "CONST10";
+									slot2.dst  = doubleConst10.dst;
+									slot2.cdtn = doubleConst10.cdtn;
+									slot2.sf   = doubleConst10.sf;
+								}
+
+							}
+						}
 					}
 				}
 				else if(const16A !== null){
