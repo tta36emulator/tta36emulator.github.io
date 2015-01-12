@@ -593,11 +593,6 @@ var Compiler = function(){
 			var slots = [];
 			var parsedCommands = [];
 
-			/*if(commands.length < 3){
-				for (var i = commands.length; i < 3; i++)
-					commands.push("R1->NULL");
-			}*/
-
 			for(var i = 0; i < commands.length; i++)
 				parsedCommands.push(parseCommand(commands[i]));
 
@@ -852,15 +847,6 @@ var Compiler = function(){
 							}
 						}
 					}
-
-						/*if(slot0 === null && getSRC_ADDR(0, cmd.src) > -1 && getDST_ADDR(0, cmd.dst) > -1 && cmd.cdtn === '')
-							slot0 = {src:cmd.src, dst:cmd.dst};
-						else if(slot1 === null && getSRC_ADDR(1, cmd.src) > -1 && getDST_ADDR(1, cmd.dst) > -1)
-							slot1 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}
-						else if(slot2 === null && getSRC_ADDR(2, cmd.src) > -1 && getDST_ADDR(2, cmd.dst) > -1)
-							slot2 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}
-						else
-							errorCanvas.drawText('Console 12pt', 'ERROR: all slots full.', 5, 20, '#000');		*/	
 				}
 				else
 				{
