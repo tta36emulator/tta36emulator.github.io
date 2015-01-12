@@ -388,6 +388,9 @@ var Compiler = function(){
 				}
 			//############-Const10/16-#################################
 
+			if(_sf)
+				_cdtn = 'SF';
+
 			return {src:_src, dst:_dst, cdtn:_cdtn, const10:_c10, const16:_c16, sf:_sf}
 		};
 
@@ -453,6 +456,9 @@ var Compiler = function(){
 				case 'E?': 
 					bits = '110';
 					break;
+				case 'SF': 
+					bits = '111';
+					break;	
 				default:
 					bits = value;
 					break;
@@ -504,17 +510,27 @@ var Compiler = function(){
 				SlotsTable.values.slot2cdtn.innerHTML = getFlagBits(slots[2].cdtn);
 			}
 
-			if(slots[0].const16 === undefined){
+			if(slots[0] === null || slots[0].const16 === undefined){
 
-				if(slots[2].cdtn === '')
-				   SlotsTable.exp.slot2cdtn.innerHTML = '-';
+				if(slots[2].sf)
+					SlotsTable.exp.slot2cdtn.innerHTML = 'SF';
 				else
-				   SlotsTable.exp.slot2cdtn.innerHTML = slots[2].cdtn;
+				{
+					if(slots[2].cdtn === '')
+				  		SlotsTable.exp.slot2cdtn.innerHTML = '-';
+					else
+				  		SlotsTable.exp.slot2cdtn.innerHTML = slots[2].cdtn;
+				}
 
-				if(slots[1].cdtn === '')
-					SlotsTable.exp.slot1cdtn.innerHTML = '-';
+				if(slots[1].sf)
+					SlotsTable.exp.slot1cdtn.innerHTML = 'SF';
 				else
-					SlotsTable.exp.slot1cdtn.innerHTML = slots[1].cdtn;
+				{
+					if(slots[1].cdtn === '')
+						SlotsTable.exp.slot1cdtn.innerHTML = '-';
+					else
+						SlotsTable.exp.slot1cdtn.innerHTML = slots[1].cdtn;
+				}
 			}
 			else
 			{
@@ -533,31 +549,30 @@ var Compiler = function(){
 			var sd2 = 0;
 			var sc2 = '000';
 
-			if(slots[0].src !== undefined && slots[0].dst !== undefined)
+			if(slots[0] !== null && slots[0].src !== undefined && slots[0].dst !== undefined)
 			{
 				ss0 = get5bitFromConst(getSRC_ADDR(0,slots[0].src));
 				sd0 = get5bitFromConst(getDST_ADDR(0,slots[0].dst));
 			}
-			else if(slots[0].const16 !== undefined){
+			else if(slots[0] !== null && slots[0].const16 !== undefined){
 				ss0 = slots[0].const16;
 				sd0 = '';
 			}
 
-			else if (slots[0].const10 !== undefined){
+			else if (slots[0] !== null && slots[0].const10 !== undefined){
 				ss0 = slots[0].const10;
 				sd0 = '';
 			}
 
-			if(slots[1].src !== undefined && slots[1].dst !== undefined)
+			if(slots[1] !== null && slots[1].src !== undefined && slots[1].dst !== undefined)
 			{
 				ss1 = get5bitFromConst(getSRC_ADDR(1,slots[1].src));
 				sd1 = get5bitFromConst(getDST_ADDR(1,slots[1].dst));
-
 				if(slots[1].cdtn !== '')
 					sc1 = getFlagBits(slots[1].cdtn);
 			}
 
-			if(slots[2].src !== undefined && slots[2].dst !== undefined)
+			if(slots[2] !== null && slots[2].src !== undefined && slots[2].dst !== undefined)
 			{
 				ss2 = get5bitFromConst(getSRC_ADDR(2,slots[2].src));
 				sd2 = get5bitFromConst(getDST_ADDR(2,slots[2].dst));
@@ -626,6 +641,7 @@ var Compiler = function(){
 								slot2.src = "CONST10";
 								slot2.dst  = const10A.dst;
 								slot2.cdtn = const10A.cdtn;
+								slot2.sf   = const10A.sf;
 							}	
 						}
 						else if(getDST_ADDR(2, parsedCommands[0].dst) > -1 && getSRC_ADDR(2, parsedCommands[0].src) > -1){
@@ -634,6 +650,7 @@ var Compiler = function(){
 								slot1.src = "CONST10";
 								slot1.dst  = const10A.dst;
 								slot1.cdtn = const10A.cdtn;
+								slot1.sf   = const10A.sf;
 							}
 						}
 					}
@@ -645,12 +662,14 @@ var Compiler = function(){
 							slot1.src = "CONST10";
 							slot1.dst  = const10A.dst;
 							slot1.cdtn = const10A.cdtn;
+							slot1.sf   = const10A.sf;
 						}
 						else if(getDST_ADDR(2, const10A.dst) > -1){	
 							slot2 = {};		
 							slot2.src = "CONST10";
 							slot2.dst  = const10A.dst;
 							slot2.cdtn = const10A.cdtn;
+							slot2.sf   = const10A.sf;
 						}	
 					}
 				}
@@ -735,7 +754,7 @@ var Compiler = function(){
 							else if(cdt == 'slot1')
 							{
 								if(slot1 === null){
-									slot1 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}
+									slot1 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn, sf:cmd.sf}
 									break;
 								}
 								else
@@ -745,7 +764,7 @@ var Compiler = function(){
 							else if(cdt == 'slot2')
 							{
 								if(slot2 === null){
-									slot2 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}
+									slot2 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn, sf:cmd.sf}
 									break;
 								}
 								else
@@ -775,7 +794,7 @@ var Compiler = function(){
 							else if(cdt == 'slot1')
 							{
 								if(slot1 === null){
-									slot1 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}
+									slot1 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn, sf:cmd.sf}
 									break;
 								}
 								else
@@ -785,7 +804,7 @@ var Compiler = function(){
 							else if(cdt == 'slot2')
 							{
 								if(slot2 === null){
-									slot2 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}
+									slot2 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn, sf:cmd.sf}
 									break;
 								}
 								else
@@ -815,7 +834,7 @@ var Compiler = function(){
 							else if(cdt == 'slot1')
 							{
 								if(slot1 === null){
-									slot1 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}
+									slot1 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn, sf:cmd.sf}
 									break;
 								}
 								else
@@ -825,7 +844,7 @@ var Compiler = function(){
 							else if(cdt == 'slot2')
 							{
 								if(slot2 === null){
-									slot2 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}
+									slot2 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn, sf:cmd.sf}
 									break;
 								}
 								else
@@ -850,9 +869,9 @@ var Compiler = function(){
 						for(var i = 0; i < parsedCommands.length; i++){
 							var cmd = parsedCommands[i];
 							if(slot2 === null)
-								slot2 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}	
+								slot2 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn, sf:cmd.sf}	
 							else if(slot1=== null)
-								slot1 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn}	
+								slot1 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn, sf:cmd.sf}	
 						}
 					}
 					else if(const16A)
@@ -872,26 +891,33 @@ var Compiler = function(){
 					}
 				}
 
+
+			if(slot0 === null || (slot0.src === undefined && slot0.dst === undefined))
+			{
+				if(slot0.const10 === undefined && slot0.const16 === undefined)
+				   slot0 = {src:'R0', dst:'NULL'};	
+			}
+
 			if(slot1 === null || (slot1.src === undefined && slot1.dst === undefined)){
 				if(slot1 !== null){
 					if(slot1.cdtn === undefined)
-						slot1 = {src:'R0', dst:'NULL', cdtn:''};	
+						slot1 = {src:'R0', dst:'NULL', cdtn:'', sf:false};	
 					else
-						slot1 = {src:'R0', dst:'NULL', cdtn:slot1.cdtn};
+						slot1 = {src:'R0', dst:'NULL', cdtn:slot1.cdtn, sf:false};
 				}	
 				else
-					slot1 = {src:'R0', dst:'NULL', cdtn:''};
+					slot1 = {src:'R0', dst:'NULL', cdtn:'', sf:false};
 			}
 
 			if(slot2 === null || (slot2.src === undefined && slot2.dst === undefined)){
 				if(slot2 !== null){
 					if(slot2.cdtn === undefined)
-						slot2 = {src:'R0', dst:'NULL', cdtn:''};	
+						slot2 = {src:'R0', dst:'NULL', cdtn:'', sf:false};	
 					else
-						slot2 = {src:'R0', dst:'NULL', cdtn:slot2.cdtn};
+						slot2 = {src:'R0', dst:'NULL', cdtn:slot2.cdtn, sf:false};
 				}	
 				else
-					slot2 = {src:'R0', dst:'NULL', cdtn:''};
+					slot2 = {src:'R0', dst:'NULL', cdtn:'', sf:false};
 			}
 
 			slots[0] = slot0;
