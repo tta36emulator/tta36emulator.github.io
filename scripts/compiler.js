@@ -873,17 +873,25 @@ var Compiler = function(){
 				}
 
 			if(slot1 === null || (slot1.src === undefined && slot1.dst === undefined)){
-				if(slot1.cdtn === undefined)
-					slot1 = {src:'R0', dst:'NULL', cdtn:''};	
+				if(slot1 !== null){
+					if(slot1.cdtn === undefined)
+						slot1 = {src:'R0', dst:'NULL', cdtn:''};	
+					else
+						slot1 = {src:'R0', dst:'NULL', cdtn:slot1.cdtn};
+				}	
 				else
-					slot1 = {src:'R0', dst:'NULL', cdtn:slot1.cdtn};	
+					slot1 = {src:'R0', dst:'NULL', cdtn:''};
 			}
 
 			if(slot2 === null || (slot2.src === undefined && slot2.dst === undefined)){
-				if(slot2.cdtn === undefined)
-					slot2 = {src:'R0', dst:'NULL', cdtn:''};	
+				if(slot2 !== null){
+					if(slot2.cdtn === undefined)
+						slot2 = {src:'R0', dst:'NULL', cdtn:''};	
+					else
+						slot2 = {src:'R0', dst:'NULL', cdtn:slot2.cdtn};
+				}	
 				else
-					slot2 = {src:'R0', dst:'NULL', cdtn:slot2.cdtn};	
+					slot2 = {src:'R0', dst:'NULL', cdtn:''};
 			}
 
 			slots[0] = slot0;
