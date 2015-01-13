@@ -63,6 +63,10 @@ tr, td {
 	background-color: #00f;
 }
 
+.errorLine{
+	background-color: #f00;
+}
+
 .simpleLine{
 	background-color: #000;
 }

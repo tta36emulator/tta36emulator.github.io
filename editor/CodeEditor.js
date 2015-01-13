@@ -48,7 +48,7 @@ var CodeEditor = function () {
 
 
 		self.preprocess = function(code){
-			 var lines = code.split("\n");
+			 /*var lines = code.split("\n");
 			 var resultCode = "";
 			 editStrings.length = 0;
 			 warnings.length = 0;
@@ -63,7 +63,8 @@ var CodeEditor = function () {
 					resultCode += lines[i] + "\n";
 			 }
 
-			return resultCode;
+			return resultCode;*/
+			return code;
 		};
 
 		var isReadOnly = function(num){
@@ -177,6 +178,12 @@ var CodeEditor = function () {
 			editor.addLineClass(currentLineNum, "wrap", "currentLine");		
 			return s;
 		};
+
+		self.selectErrorLine = function(){
+			var line = currentLineNum - 1;
+			editor.removeLineClass(line, "wrap", "simpleLine");
+			editor.addLineClass(line, "wrap", "errorLine");		
+		}
 
 		self.reset = function(){
 

@@ -13,6 +13,13 @@ var Compiler = function(){
 				context.fillText(text, x, y);
 			};
 
+			_xcanvas.drawError = function(font, text, x, y, color){
+				_xcanvas.clearCanvas('#fcc');
+				context.font       = font;
+				context.fillStyle  = color;
+				context.fillText(text, x, y);
+			};
+		
 			_xcanvas.clearColor = function(color){
 				context.fillStyle = color;
 				context.clearRect(0, 0, canvas.width, canvas.height);
@@ -125,12 +132,10 @@ var Compiler = function(){
 
 	xcanvas.clearCanvas('#ccf');
 	xcanvas.drawText('Console 12pt', 'SCREEN', 5, 10, '#000');
-
-	errorCanvas.clearCanvas('#fcc');
-	errorCanvas.drawText('Console 12pt', 'ERROR', 5, 10, '#000');
+	errorCanvas.clearCanvas('#cfc');
 
 	codeEditor.refresh();
-	codeEditor.loadCode("LINK -> R14, R2 -> ADDC.A, R2 -> ADDC.B\nR1 -> ADD.B, ADDC -> ADDC.A, ADDC -> ADDC.B\n#0x000F -> AND.A, R1 -> ADD.A\nADDC -> R5, ADD -> ADD.A, ADD -> ADD.B\nR5 -> ADDC.A, ADD -> ADD.A, ADD -> ADD.B\nR5 -> ADDC.B, ADD -> ADD.A, ADD -> ADD.B\nADDC -> R5, ADD -> ADD.A, ADD -> ADD.B\nR5 -> ADDC.A, ADD -> ADD.A, ADD -> ADD.B\nR5 -> ADDC.B, ADD -> ADD.A, ADD -> ADD.B\nR0 -> SH, ADD -> ADD.A, ADD -> ADD.B\nSH.R => ADD.B, ADD -> ADD.A, ADDC -> R5\nNC? #0x00F0 -> AND.A, ADD -> ADDR\nNC? R5 -> R2, DATA -> AND.B\nR14 -> IP, AND -> DATA, R2 -> DATA\n");
+	codeEditor.loadCode("LINK -> R14, R2 -> ADDC.A, R2 -> ADDC.B\nR1 -> ADD.B, ADDC -> ADDC.A, ADDC -> ADDC.B\n#0x000F -> AND.A, R1 -> ADD.A\nADDC -> R5, ADD -> ADD.A, ADD -> ADD.B\nR5 -> ADDC.A, ADD -> ADD.A, ADD -> ADD.B\nR5 -> ADDC.B, ADD -> ADD.A, ADD -> ADD.B\nADDC -> R5, ADD -> ADD.A, ADD -> ADD.B\nR5 -> ADDC.A, ADD -> ADD.A, ADD -> ADD.B\nR5 -> ADDC.B, ADD -> ADD.A, ADD -> ADD.B\nR0 -> SH, ADD -> ADD.A, ADD -> ADD.B\nSH.R => ADD.B, ADD -> ADD.A, ADDC -> R5\nNC? #0x00F0 -> AND.A, ADD -> ADDR\nNC? R5 -> R2, DATA -> AND.B\nR14 -> IP, AND -> DATA, R2 -> DATA");
 
 	var zeroFill  = function( number, width )
 	{
@@ -143,7 +148,7 @@ var Compiler = function(){
         return parseInt(hexNumber,16);
 	};
 
-	function toBin(decValue){
+	var toBin = function(decValue){
 		if(decValue >= 0)
 			return decValue.toString(2);
 		else 
@@ -197,10 +202,6 @@ var Compiler = function(){
 	{
 		while (node.firstChild)
 			node.removeChild(node.firstChild);
-	};
-
-	var t = function(){
-
 	};
 
 	var createHeaders = function(){
@@ -309,21 +310,28 @@ var Compiler = function(){
 		};
 
 		var parseCommand = function(command){
+			var _src  = "",
+				_dst  = "",
+				_cdtn = "",
+				_c10  = false,
+				_c16  = false,
+				_sf   = false,
+				_slots = [],
+				_const = "-",
+				_priority = -1;
 
-			//Example: 	#10->R1
-			//			#0x80->R1	
-			//			Z? #200->R1
-			//			C? #200->R1
-			//			S? #200->R1
+				var getSlotCandidats = function(s,d){
+					if(_sf === false && _cdtn === "" && getSRC_ADDR(0,s) > -1 && getDST_ADDR(0,d) > -1)
+						_slots.push(0);
 
-			var _src  = "";
-			var _dst  = "";
-			var _cdtn = "";
-			var _c10 = false;
-			var _c16 = false;
-			var _sf  = false;
+					if(getSRC_ADDR(1,s) > -1 && getDST_ADDR(1,d) > -1)
+						_slots.push(1);
 
-			//############-condition-##################################
+					if(getSRC_ADDR(2,s) > -1 && getDST_ADDR(2,d) > -1)
+						_slots.push(2);
+				}
+
+			//1. ############-condition-##################################
 				if(command.indexOf('?') > -1) 
 				{
 					if(command.indexOf('NZ?') > -1){
@@ -331,19 +339,19 @@ var Compiler = function(){
 						_cdtn = 'NZ?';
 					}
 
+					else if(command.indexOf('NC?') > -1){
+						command = command.replace("NC?","").trim();
+						_cdtn = 'NC?';
+					}
+
 					else if(command.indexOf('Z?') > -1){
 						command = command.replace("Z?","").trim();
 						_cdtn = 'Z?';
 					}
 
-					else if(command.indexOf('C?') > -1 && command.indexOf('NC?') === -1){
+					else if(command.indexOf('C?') > -1){
 						command = command.replace("C?","").trim();
 						_cdtn = 'C?';
-					}
-
-					else if(command.indexOf('NC?') > -1){
-						command = command.replace("NC?","").trim();
-						_cdtn = 'NC?';
 					}
 
 					else if(command.indexOf('S?') > -1){
@@ -358,22 +366,30 @@ var Compiler = function(){
 				}
 			//############-condition-##################################
 
-			//############-SRC-DST-####################################
-				if(command.indexOf('->') > -1) {
-					var srcdst = command.split('->');
-					_src = srcdst[0].trim();
-					_dst = srcdst[1].trim();
-				}
+			//2. ############-SRC-DST-####################################
+				if(command.indexOf('->') > -1 || command.indexOf('=>') > -1)
+				{
+					if(command.indexOf('->') > -1) {
+						var srcdst = command.split('->');
+						_src = srcdst[0].trim();
+						_dst = srcdst[1].trim();
+					}
 
-				if(command.indexOf('=>') > -1) {
-					var srcdst = command.split('=>');
-					_src = srcdst[0].trim();
-					_dst = srcdst[1].trim();
-					_sf  = true;
+					if(command.indexOf('=>') > -1) {
+						var srcdst = command.split('=>');
+						_src = srcdst[0].trim();
+						_dst = srcdst[1].trim();
+						_sf  = true;
+					}
+				}
+				else
+				{
+					errorCanvas.drawError('Console 12pt', 'ERROR: -> or => not found...', 5, 30, '#000');
+					codeEditor.selectErrorLine();
 				}
 			//############-SRC-DST-####################################
 
-			//############-Const10/16-#################################
+			//3. ############-Const10/16-#################################
 				if(_src.indexOf('#') > -1){
 					_src = _src.replace('#','').trim();
 
@@ -388,10 +404,22 @@ var Compiler = function(){
 				}
 			//############-Const10/16-#################################
 
+			//4. ############-Find slot candidats-########################
+				if(!_c16 && !_c10)
+					getSlotCandidats(_src,_dst);
+				else{
+					_const = _src;
+					(_src > 0x3FF) ? _src = 'CONST16' : _src = 'CONST10';
+					getSlotCandidats(_src,_dst);
+				}
+
+				_priority = _slots.length;
+			//############-Find slot candidats-########################
+	
 			if(_sf)
 				_cdtn = 'SF';
 
-			return {src:_src, dst:_dst, cdtn:_cdtn, const10:_c10, const16:_c16, sf:_sf}
+			return {src:_src, dst:_dst, cdtn:_cdtn, const10:_c10, const16:_c16, sf:_sf, candidats:_slots, const10_16:_const, priority:_priority}
 		};
 
 		var parseBundle = function(bundle){
@@ -402,9 +430,9 @@ var Compiler = function(){
 		};
 
 		var get10bitFromConst = function(value){
-			var bin = toBin(value);
-			var dt = 16 - bin.length;
-			var n = '';
+			var bin = toBin(value),
+				dt = 16 - bin.length,
+				n = '';		
 			for(var i = 0; i < dt; i++)
 				n += '0';
 			bin = n + bin;
@@ -412,9 +440,9 @@ var Compiler = function(){
 		};
 
 		var get5bitFromConst = function(value){
-			var bin = toBin(value);
-			var dt = 5 - bin.length;
-			var n = '';
+			var bin = toBin(value),
+				dt = 5 - bin.length,
+				n = '';
 			for(var i = 0; i < dt; i++)
 				n += '0';
 			bin = n + bin;
@@ -422,9 +450,9 @@ var Compiler = function(){
 		};
 
 		var get16bitFromConst = function(value){
-			var bin = toBin(value);
-			var dt = 16 - bin.length;
-			var n = '';
+			var bin = toBin(value),
+				dt = 16 - bin.length,
+				n = '';
 			for(var i = 0; i < dt; i++)
 				n += '0';
 			bin = n + bin;
@@ -499,6 +527,20 @@ var Compiler = function(){
 				SlotsTable.exp.slot1src.innerHTML = slots[1].src;
 				SlotsTable.exp.slot1dst.innerHTML = slots[1].dst;
 				SlotsTable.values.slot1cdtn.innerHTML = getFlagBits(slots[1].cdtn);
+
+				if(slots[0].const16 === undefined){
+					if(slots[1].sf)
+						SlotsTable.exp.slot1cdtn.innerHTML = 'SF';
+					else
+					{
+						if(slots[1].cdtn === '')
+					  		SlotsTable.exp.slot1cdtn.innerHTML = '-';
+						else
+					  		SlotsTable.exp.slot1cdtn.innerHTML = slots[1].cdtn;
+					}
+				}
+				else
+					SlotsTable.exp.slot1cdtn.innerHTML = 'C16 3bit';
 			}
 
 			if(slots[2] != null)
@@ -508,34 +550,20 @@ var Compiler = function(){
 				SlotsTable.exp.slot2src.innerHTML = slots[2].src;
 				SlotsTable.exp.slot2dst.innerHTML = slots[2].dst;
 				SlotsTable.values.slot2cdtn.innerHTML = getFlagBits(slots[2].cdtn);
-			}
 
-			if(slots[0] === null || slots[0].const16 === undefined){
-
-				if(slots[2].sf)
-					SlotsTable.exp.slot2cdtn.innerHTML = 'SF';
-				else
-				{
-					if(slots[2].cdtn === '')
-				  		SlotsTable.exp.slot2cdtn.innerHTML = '-';
+				if(slots[0].const16 === undefined){
+					if(slots[2].sf)
+						SlotsTable.exp.slot2cdtn.innerHTML = 'SF';
 					else
-				  		SlotsTable.exp.slot2cdtn.innerHTML = slots[2].cdtn;
+					{
+						if(slots[2].cdtn === '')
+					  		SlotsTable.exp.slot2cdtn.innerHTML = '-';
+						else
+					  		SlotsTable.exp.slot2cdtn.innerHTML = slots[2].cdtn;
+					}
 				}
-
-				if(slots[1].sf)
-					SlotsTable.exp.slot1cdtn.innerHTML = 'SF';
 				else
-				{
-					if(slots[1].cdtn === '')
-						SlotsTable.exp.slot1cdtn.innerHTML = '-';
-					else
-						SlotsTable.exp.slot1cdtn.innerHTML = slots[1].cdtn;
-				}
-			}
-			else
-			{
-				SlotsTable.exp.slot2cdtn.innerHTML = 'C16 3bit';
-				SlotsTable.exp.slot1cdtn.innerHTML = 'C16 3bit';
+					SlotsTable.exp.slot2cdtn.innerHTML = 'C16 3bit';
 			}
 
 			var ss0 = 0;
@@ -590,7 +618,7 @@ var Compiler = function(){
 
 		var getBundleSlots = function(bundle){
 			var commands = parseBundle(bundle);
-			var slots = [];
+			var slots = [null,null,null];
 			var parsedCommands = [];
 
 			for(var i = 0; i < commands.length; i++)
@@ -598,428 +626,133 @@ var Compiler = function(){
 
 			//############-Create slots-#################################
 
-				var slot0 = null;
-				var slot1 = null;
-				var slot2 = null;
+				var const16A = null,
+					const10A = null,
+					const16E = false,
+					const10E = false;
 
-				var const16E = false;
-				var const10E = false;
+					parsedCommands.sort(function(a,b){
+						if(a.priority < b.priority) return -1;
+					 	if(a.priority > b.priority) return 1;		 
+					  	return 0;
+					});
 
-				var doubleConst10 = null;
-				var const16A = null;
-				var const10A = null;
+					for(var j = 0; j < parsedCommands.length; j++){
+						var cmd = parsedCommands[j];
+						var r = false;
 
+						if(cmd.const10_16 !== '-'){
+							if(const16E){
+								errorCanvas.drawError('Console 12pt', 'ERROR: Const16 already defined...', 5, 30, '#000');
+								codeEditor.selectErrorLine();
+							}
 
-				for(var i = 0; i < parsedCommands.length; i++){
-					var cmd = parsedCommands[i];
+							if(const10E){
+								if(cmd.const10_16 !== const10A){
+									errorCanvas.drawError('Console 12pt', 'ERROR: Const10 and Const10 not equals...', 5, 30, '#000');
+									codeEditor.selectErrorLine();
+								}
+							}
 
-					if(const10A === null && cmd.const10) 
-						const10A  = parsedCommands[i];
-					else
-					{
-						if(const10A !== null && cmd.src === const10A.src)
-							doubleConst10 = parsedCommands[i];
-						else
-							errorCanvas.drawText('Console 12pt', 'ERROR: Const10 and Const10 not equals...', 5, 20, '#000');
-					}
+							if(cmd.const10 && !const10E){
+								var c = get16bitFromConst(cmd.const10_16);
+								const10A = cmd.const10_16;
+								slots[0] = {const10:c.substring(6,16)};
+								const10E = true;
+							}
 
-					if(cmd.const16) {
-						if(const16A === null)
-							const16A  = parsedCommands[i];
-						else
-							errorCanvas.drawText('Console 12pt', 'ERROR: Const16 already defined...', 5, 20, '#000');
-					}			
-				}
-
-				if(const10A !== null){
-					var idx = parsedCommands.indexOf(const10A);
-					parsedCommands.splice(idx, 1);
-
-					if(doubleConst10 != null)
-					{
-						idx = parsedCommands.indexOf(doubleConst10);
-						parsedCommands.splice(idx, 1);
-					}
-				}
-
-				if(const16A !== null){
-					var idx = parsedCommands.indexOf(const16A);
-					parsedCommands.splice(idx, 1);
-				}
-
-				if(const10A !== null)
-				{
-					var s = get16bitFromConst(const10A.src);
-					slot0 = {const10:s.substring(6,16)};
-
-					if(parsedCommands.length === 1){
-						if(getDST_ADDR(1, parsedCommands[0].dst) > -1 && getSRC_ADDR(1, parsedCommands[0].src) > -1){
-							if(getDST_ADDR(2, const10A.dst) > -1){	
-								slot2 = {};		
-								slot2.src = "CONST10";
-								slot2.dst  = const10A.dst;
-								slot2.cdtn = const10A.cdtn;
-								slot2.sf   = const10A.sf;
-							}	
-						}
-						else if(getDST_ADDR(2, parsedCommands[0].dst) > -1 && getSRC_ADDR(2, parsedCommands[0].src) > -1){
-								if(getDST_ADDR(1, const10A.dst) > -1){	
-								slot1 = {};
-								slot1.src = "CONST10";
-								slot1.dst  = const10A.dst;
-								slot1.cdtn = const10A.cdtn;
-								slot1.sf   = const10A.sf;
+							if(cmd.const16){
+								var c = get16bitFromConst(cmd.const10_16);
+								slots[0] = {const16:c.substring(6,16)};
+								slots[1] = {};
+								slots[2] = {};
+								slots[1].cdtn = c.substring(3,6);
+								slots[2].cdtn = c.substring(0,3);
+								const16E = true;
 							}
 						}
-					}
-					else{					
-						slot1 = {src:"CONST10", dst:const10A.dst, cdtn:const10A.cdtn};
 
-						if(doubleConst10 === null){
-							if(getDST_ADDR(1, const10A.dst) > -1){
-								slot1 = {};
-								slot1.src = "CONST10";
-								slot1.dst  = const10A.dst;
-								slot1.cdtn = const10A.cdtn;
-								slot1.sf   = const10A.sf;
-							}
-							else if(getDST_ADDR(2, const10A.dst) > -1){	
-								slot2 = {};		
-								slot2.src = "CONST10";
-								slot2.dst  = const10A.dst;
-								slot2.cdtn = const10A.cdtn;
-								slot2.sf   = const10A.sf;
-							}	
-						}
-						else
-						{
-							var c1 = "",
-								c2 = "";
+						for(var i = 0; i < cmd.candidats.length; i++)	
+						{	
+							switch(cmd.candidats[i]){
+								case 0:
+									if (slots[0] !== null) continue;
+									slots[0] = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn, sf:cmd.sf};
+									r = true;
+									break;
+								case 1:
+									if(slots[1] !== null && ('cdtn' in slots[1]))
+									{
+										if(cmd.cdtn !== ''){
+											errorCanvas.drawText('Console 12pt', 'ERROR: CONST16 defined condition bits disabled...', 5, 30, '#000');	
+											codeEditor.selectErrorLine();
+										}
 
-							if(getDST_ADDR(1, const10A.dst) > 1 && getDST_ADDR(2, const10A.dst) > 1)
-								c1 = "all";
-
-							if(getDST_ADDR(1, doubleConst10.dst) > -1 && getDST_ADDR(2, doubleConst10.dst) > -1)
-								c2 = "all";
-
-							else
-							{
-								if(getDST_ADDR(1, const10A.dst) === -1 && getDST_ADDR(2, const10A.dst) === -1)
-									c1 = "nothing";
-								else
-								{
-									if(getDST_ADDR(1, const10A.dst) === -1)
-										c1 = "slot2";
+										if(slots[1].src === undefined && slots[1].src === undefined){
+											slots[1] = {src:cmd.src, dst:cmd.dst, cdtn:slots[1].cdtn, sf:cmd.sf};
+											r = true;
+										}
+									}
+									else if(slots[1] === null){
+										slots[1] = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn, sf:cmd.sf};
+										r = true;
+									}
 									else
-										c1 = "slot1";
-								}
+										continue;
 
-								if(getDST_ADDR(1, doubleConst10.dst) === -1 && getDST_ADDR(2, doubleConst10.dst) === -1)
-									c2 = "nothing";
-								else
-								{
-									if(getDST_ADDR(1, doubleConst10.dst) === -1)
-										c2 = "slot2";
+									break;
+								case 2:
+									if(slots[2] !== null && ('cdtn' in slots[2]))
+									{
+										if(cmd.cdtn !== ''){
+											errorCanvas.drawError('Console 12pt', 'ERROR: CONST16 defined condition bits disabled...', 5, 30, '#000');	
+											codeEditor.selectErrorLine();
+										}
+
+										if(slots[2].src === undefined && slots[2].src === undefined){
+											slots[2] = {src:cmd.src, dst:cmd.dst, cdtn:slots[2].cdtn, sf:cmd.sf};
+											r = true;
+										}
+									}
+									else if(slots[2] === null){
+										slots[2] = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn, sf:cmd.sf};
+										r = true;
+									}
 									else
-										c2 = "slot1";
-								}
+										continue;
+									break;
 							}
 
-							if(c1 === "all" && c2 === "all"){
-								slot1 = {};
-								slot1.src = "CONST10";
-								slot1.dst  = const10A.dst;
-								slot1.cdtn = const10A.cdtn;
-								slot1.sf   = const10A.sf;
-
-								slot2 = {};		
-								slot2.src = "CONST10";
-								slot2.dst  = doubleConst10.dst;
-								slot2.cdtn = doubleConst10.cdtn;
-								slot2.sf   = doubleConst10.sf;
-							}
-							else
-							{
-								if(c1 === "slot1")
-								{
-									slot1 = {};
-									slot1.src = "CONST10";
-									slot1.dst  = const10A.dst;
-									slot1.cdtn = const10A.cdtn;
-									slot1.sf   = const10A.sf;
-								}
-								else
-								{
-									slot2 = {};
-									slot2.src = "CONST10";
-									slot2.dst  = const10A.dst;
-									slot2.cdtn = const10A.cdtn;
-									slot2.sf   = const10A.sf;
-								}
-
-								if(c2 === "slot1")
-								{
-									slot1 = {};		
-									slot1.src = "CONST10";
-									slot1.dst  = doubleConst10.dst;
-									slot1.cdtn = doubleConst10.cdtn;
-									slot1.sf   = doubleConst10.sf;
-								}
-								else
-								{
-									slot2 = {};		
-									slot2.src = "CONST10";
-									slot2.dst  = doubleConst10.dst;
-									slot2.cdtn = doubleConst10.cdtn;
-									slot2.sf   = doubleConst10.sf;
-								}
-
-							}
+							if(r)
+								break;
 						}
 					}
-				}
-				else if(const16A !== null){
-					var s = get16bitFromConst(const16A.src);
-					slot0 = {const16:s.substring(6,16)};
-					slot1 = {};
-					slot2 = {};
 
-					if(getDST_ADDR(1, const16A.dst) > -1){	
-						slot1.src = "CONST16";
-						slot1.dst = const16A.dst;
-					}
-					else if(getDST_ADDR(2, const16A.dst) > -1){			
-						slot2.src = "CONST16";
-						slot2.dst = const16A.dst;
-					}
-
-					slot1.cdtn = s.substring(3,6);
-					slot2.cdtn = s.substring(0,3);
+				if(slots[0] === null)
+					slots[0] = {src:'R0', dst:'NULL'};	
+				else if(slots[0].const10 === undefined && slots[0].const16 === undefined){
+					if(slots[0].src === undefined && slots[0].dst === undefined)
+						slots[0] = {src:'R0', dst:'NULL'};	
 				}
 
-				if(const10A !== null || const16A !== null)
-				{
-					//Если есть константа и запись вида: #100->R1, R2->R3, R4->R5, т.е. осталась лишняя команда
-					if(parsedCommands.length > 1)
-						errorCanvas.drawText('Console 12pt', 'ERROR: const defined only 1 commands avaliable...', 5, 20, '#000');
-				}
-
-				if(const10A === null && const16A === null)
-				{	
-					var _candidats = [];
-					for(var i = 0; i < parsedCommands.length; i++){
-						var cmd = parsedCommands[i];
-						var candidats = [];
-
-						if(cmd.cdtn === '' && getSRC_ADDR(0, cmd.src) > -1 && getDST_ADDR(0, cmd.dst) > -1)
-							candidats.push('slot0');
-
-						if(getSRC_ADDR(1, cmd.src) > -1 && getDST_ADDR(1, cmd.dst) > -1)
-							candidats.push('slot1');
-
-						if(getSRC_ADDR(2, cmd.src) > -1 && getDST_ADDR(2, cmd.dst) > -1)
-							candidats.push('slot2');
-
-						_candidats.push({cmd:parsedCommands[i], cdt:candidats});
-					}
-
-					var high   = [];
-					var midlle = [];
-					var low    = [];
-
-					for(var i = 0; i < _candidats.length; i++)
-					{
-						var cdt = _candidats[i].cdt;
-						if(cdt.length === 3)
-							low.push(_candidats[i]); 
-						else if(cdt.length === 2)
-							midlle.push(_candidats[i]); 
-						else if(cdt.length === 1)
-							high.push(_candidats[i]); 
-					}
-
-					for(var i = 0; i < high.length; i++)
-					{
-						var cmd = high[i].cmd;
-
-						for(var j = 0; j < high[i].cdt.length; j++)
-						{
-							var cdt = high[i].cdt[j];
-
-							if(cdt == 'slot0')
-							{
-								if(slot0 === null){
-									slot0 = {src:cmd.src, dst:cmd.dst};
-									break;
-								}
-								else
-									continue;
-							}
-
-							else if(cdt == 'slot1')
-							{
-								if(slot1 === null){
-									slot1 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn, sf:cmd.sf}
-									break;
-								}
-								else
-									continue;
-							}
-
-							else if(cdt == 'slot2')
-							{
-								if(slot2 === null){
-									slot2 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn, sf:cmd.sf}
-									break;
-								}
-								else
-									continue;
-							}
-						}
-					}
-
-					for(var i = 0; i < midlle.length; i++)
-					{
-						var cmd = midlle[i].cmd;
-
-						for(var j = 0; j < midlle[i].cdt.length; j++)
-						{
-							var cdt = midlle[i].cdt[j];
-
-							if(cdt == 'slot0')
-							{
-								if(slot0 === null){
-									slot0 = {src:cmd.src, dst:cmd.dst};
-									break;
-								}
-								else
-									continue;
-							}
-
-							else if(cdt == 'slot1')
-							{
-								if(slot1 === null){
-									slot1 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn, sf:cmd.sf}
-									break;
-								}
-								else
-									continue;
-							}
-
-							else if(cdt == 'slot2')
-							{
-								if(slot2 === null){
-									slot2 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn, sf:cmd.sf}
-									break;
-								}
-								else
-									continue;
-							}
-						}
-					}
-
-					for(var i = 0; i < low.length; i++)
-					{
-						var cmd = low[i].cmd;
-
-						for(var j = 0; j < low[i].cdt.length; j++)
-						{
-							var cdt = low[i].cdt[j];
-
-							if(cdt == 'slot0')
-							{
-								if(slot0 === null){
-									slot0 = {src:cmd.src, dst:cmd.dst};
-									break;
-								}
-								else
-									continue;
-							}
-
-							else if(cdt == 'slot1')
-							{
-								if(slot1 === null){
-									slot1 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn, sf:cmd.sf}
-									break;
-								}
-								else
-									continue;
-							}
-
-							else if(cdt == 'slot2')
-							{
-								if(slot2 === null){
-									slot2 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn, sf:cmd.sf}
-									break;
-								}
-								else
-									continue;
-							}
-						}
-					}
-				}
-				else
-				{
-					if(const10A)
-					{
-						for(var i = 0; i < parsedCommands.length; i++){
-							var cmd = parsedCommands[i];
-							if(slot2 === null)
-								slot2 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn, sf:cmd.sf}	
-							else if(slot1=== null)
-								slot1 = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn, sf:cmd.sf}	
-						}
-					}
-					else if(const16A)
-					{
-						for(var i = 0; i < parsedCommands.length; i++){
-							var cmd = parsedCommands[i];
-							if(cmd.cdtn !== '')
-								errorCanvas.drawText('Console 12pt', 'ERROR: CONST16 defined condition bits disabled...', 5, 20, '#000');	
-							else
-							{
-								if(slot1.src === undefined && slot1.dst === undefined)
-								   slot1 = {src:cmd.src, dst:cmd.dst, cdtn:slot1.cdtn};
-								else if(slot2.src === undefined && slot2.dst === undefined)
-								   slot2 = {src:cmd.src, dst:cmd.dst, cdtn:slot2.cdtn};
-							}
-						}
-					}
-				}
-
-
-			if(slot0 === null || (slot0.src === undefined && slot0.dst === undefined))
-			{
-				if(slot0.const10 === undefined && slot0.const16 === undefined)
-				   slot0 = {src:'R0', dst:'NULL'};	
-			}
-
-			if(slot1 === null || (slot1.src === undefined && slot1.dst === undefined)){
-				if(slot1 !== null){
-					if(slot1.cdtn === undefined)
-						slot1 = {src:'R0', dst:'NULL', cdtn:'', sf:false};	
+				if(slots[1] === null)
+					slots[1] = {src:'R0', dst:'NULL', cdtn:'', sf:false};	
+				else if(slots[1].src === undefined && slots[1].dst === undefined){
+					if(slots[1].cdtn === undefined)
+						slots[1] = {src:'R0', dst:'NULL', cdtn:'', sf:false};	
 					else
-						slot1 = {src:'R0', dst:'NULL', cdtn:slot1.cdtn, sf:false};
-				}	
-				else
-					slot1 = {src:'R0', dst:'NULL', cdtn:'', sf:false};
-			}
-
-			if(slot2 === null || (slot2.src === undefined && slot2.dst === undefined)){
-				if(slot2 !== null){
-					if(slot2.cdtn === undefined)
-						slot2 = {src:'R0', dst:'NULL', cdtn:'', sf:false};	
+						slots[1] = {src:'R0', dst:'NULL', cdtn:slots[1].cdtn, sf:false};
+				}
+				
+				if(slots[2] === null)
+					slots[2] = {src:'R0', dst:'NULL',cdtn:'', sf:false};	
+				else if(slots[2].src === undefined && slots[2].dst === undefined){
+					if(slots[2].cdtn === undefined)
+						slots[2] = {src:'R0', dst:'NULL', cdtn:'', sf:false};	
 					else
-						slot2 = {src:'R0', dst:'NULL', cdtn:slot2.cdtn, sf:false};
-				}	
-				else
-					slot2 = {src:'R0', dst:'NULL', cdtn:'', sf:false};
-			}
-
-			slots[0] = slot0;
-			slots[1] = slot1;
-			slots[2] = slot2;
-
+						slots[2] = {src:'R0', dst:'NULL', cdtn:slots[2].cdtn, sf:false};
+				}
+				
 			return slots;
 		};
 
@@ -1118,7 +851,7 @@ var Compiler = function(){
 		};
 
 		_core.step = function(){
-			errorCanvas.clearColor('#fcc');
+			errorCanvas.clearColor('#cfc');
 			var s = codeEditor.step();
 			//currentCommand.innerHTML = s;
 			var slots = getBundleSlots(s);
