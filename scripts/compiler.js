@@ -916,7 +916,7 @@ var Compiler = function(){
 			destroyChildren(srcTable);
 			destroyChildren(dstTable);
 			destroyChildren(flgTable);
-			destroyChildren(lblTable);
+			//destroyChildren(lblTable);
 
 			SlotsTable.values.slot0src.innerHTML = '*';
 			SlotsTable.values.slot0dst.innerHTML = '*';
