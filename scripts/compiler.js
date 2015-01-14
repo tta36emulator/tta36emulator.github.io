@@ -619,10 +619,8 @@ var Compiler = function(){
 			var slots = [null,null,null];
 			var parsedCommands = [];
 
-			for(var i = 0; i < commands.length; i++){
+			for(var i = 0; i < commands.length; i++)
 				parsedCommands.push(parseCommand(commands[i]));
-				commandCounter++;
-			}
 
 			//############-Create slots-#################################
 
@@ -904,6 +902,7 @@ var Compiler = function(){
 			var slots = getBundleSlots(s);
 			drawSlots(slots);
 			_core.refresh();
+			commandCounter++;
 		};
 
 		_core.runCommand = function(command){
