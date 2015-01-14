@@ -417,8 +417,6 @@ var Compiler = function(){
 	
 			if(_sf)
 				_cdtn = 'SF';
-
-			commandCounter++;
 			return {src:_src, dst:_dst, cdtn:_cdtn, const10:_c10, const16:_c16, sf:_sf, candidats:_slots, const10_16:_const, priority:_priority}
 		};
 
@@ -621,8 +619,10 @@ var Compiler = function(){
 			var slots = [null,null,null];
 			var parsedCommands = [];
 
-			for(var i = 0; i < commands.length; i++)
+			for(var i = 0; i < commands.length; i++){
 				parsedCommands.push(parseCommand(commands[i]));
+				commandCounter++;
+			}
 
 			//############-Create slots-#################################
 
