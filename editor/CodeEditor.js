@@ -166,16 +166,17 @@ var CodeEditor = function () {
 		};
 
 		self.step = function(){
-			if(currentLineNum + 1 > lines)
-				return "";
-
 			var s = lineArray[currentLineNum];
 
 			editor.removeLineClass(currentLineNum, "wrap", "currentLine");
 			editor.addLineClass(currentLineNum, "wrap", "simpleLine");
-			  currentLineNum++;
-			editor.removeLineClass(currentLineNum, "wrap", "simpleLine");
-			editor.addLineClass(currentLineNum, "wrap", "currentLine");		
+			currentLineNum++;
+
+			if(currentLineNum < lines){
+				editor.removeLineClass(currentLineNum, "wrap", "simpleLine");
+				editor.removeLineClass(currentLineNum, "wrap", "errorLine");	
+				editor.addLineClass(currentLineNum, "wrap", "currentLine");	
+			}		
 			return s;
 		};
 
@@ -185,15 +186,16 @@ var CodeEditor = function () {
 			editor.addLineClass(line, "wrap", "errorLine");		
 		}
 
-		self.reset = function(){
-
-			self.loadCode(self.getCode());
-
+		self.reset = function(){		
 			editor.removeLineClass(currentLineNum, "wrap", "currentLine");
+			editor.removeLineClass(currentLineNum, "wrap", "errorLine");	
 			editor.addLineClass(currentLineNum, "wrap", "simpleLine");
 			  currentLineNum=0;
 			editor.removeLineClass(currentLineNum, "wrap", "simpleLine");
-			editor.addLineClass(currentLineNum, "wrap", "currentLine");		
+			editor.removeLineClass(currentLineNum, "wrap", "errorLine");	
+			editor.addLineClass(currentLineNum, "wrap", "currentLine");
+
+			self.loadCode(self.getCode());	
 		};
 
 		self.loadState = function(code,css){	

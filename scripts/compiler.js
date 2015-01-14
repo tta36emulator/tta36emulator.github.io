@@ -149,10 +149,8 @@ var Compiler = function(){
 	};
 
 	var toBin = function(decValue){
-		if(decValue >= 0)
-			return decValue.toString(2);
-		else 
-	        return (~decValue).toString(2);
+		if(decValue >= 0) return decValue.toString(2);
+		else return (~decValue).toString(2);
 	}
 
 	var toHex = function(number) {
@@ -198,8 +196,7 @@ var Compiler = function(){
 	    return { valid: true, result: ret };
 	};
 
-	var destroyChildren = function(node)
-	{
+	var destroyChildren = function(node){
 		while (node.firstChild)
 			node.removeChild(node.firstChild);
 	};
@@ -241,7 +238,7 @@ var Compiler = function(){
 
 	var Core = function(){
 		var _core 			= this;
-		var flags 			= {};
+		var flagsData 		= [];
 		var destinationData = [];
 		var sourseData		= [];
 
@@ -262,6 +259,8 @@ var Compiler = function(){
 
 		var slot2_dst = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","IP","ADDR","DATA","ADD.A",
 						 "ADD.B","AND.A","AND.B","SUB.A","SUB.B","SH","ADDC.A","ADDC.B","XOR.A","XOR.B","STATE","P.OUT","NULL"];
+
+		var flags	= ["NZ?","NC?","Z?","C?","S?","E?"];			 
 
 
 		for(var i = 0; i < 32; i++)
@@ -334,34 +333,12 @@ var Compiler = function(){
 			//1. ############-condition-##################################
 				if(command.indexOf('?') > -1) 
 				{
-					if(command.indexOf('NZ?') > -1){
-						command = command.replace("NZ?","").trim();
-						_cdtn = 'NZ?';
-					}
-
-					else if(command.indexOf('NC?') > -1){
-						command = command.replace("NC?","").trim();
-						_cdtn = 'NC?';
-					}
-
-					else if(command.indexOf('Z?') > -1){
-						command = command.replace("Z?","").trim();
-						_cdtn = 'Z?';
-					}
-
-					else if(command.indexOf('C?') > -1){
-						command = command.replace("C?","").trim();
-						_cdtn = 'C?';
-					}
-
-					else if(command.indexOf('S?') > -1){
-						command = command.replace("S?","").trim();
-						_cdtn = 'S?';
-					}
-
-					else if(command.indexOf('E?') > -1){
-						command = command.replace("E?","").trim();
-						_cdtn = 'E?';
+					for(var i = 0; i < flags.length; i++){
+						var f = flags[i];
+						if(command.indexOf(f) > -1){
+							command = command.replace(f,"").trim();
+							_cdtn = f;
+						}
 					}
 				}
 			//############-condition-##################################
@@ -369,18 +346,18 @@ var Compiler = function(){
 			//2. ############-SRC-DST-####################################
 				if(command.indexOf('->') > -1 || command.indexOf('=>') > -1)
 				{
-					if(command.indexOf('->') > -1) {
-						var srcdst = command.split('->');
-						_src = srcdst[0].trim();
-						_dst = srcdst[1].trim();
-					}
+					var srcdst = [];
+
+					if(command.indexOf('->') > -1)
+						srcdst = command.split('->');
 
 					if(command.indexOf('=>') > -1) {
-						var srcdst = command.split('=>');
-						_src = srcdst[0].trim();
-						_dst = srcdst[1].trim();
+						srcdst = command.split('=>');
 						_sf  = true;
 					}
+
+					_src = srcdst[0].trim();
+					_dst = srcdst[1].trim();
 				}
 				else
 				{
@@ -684,8 +661,10 @@ var Compiler = function(){
 									if(slots[1] !== null && ('cdtn' in slots[1]))
 									{
 										if(cmd.cdtn !== ''){
-											errorCanvas.drawText('Console 12pt', 'ERROR: CONST16 defined condition bits disabled...', 5, 30, '#000');	
-											codeEditor.selectErrorLine();
+											if(const16E){
+												errorCanvas.drawText('Console 12pt', 'ERROR: CONST16 defined condition bits disabled...', 5, 30, '#000');	
+												codeEditor.selectErrorLine();
+											}
 										}
 
 										if(slots[1].src === undefined && slots[1].src === undefined){
@@ -705,8 +684,10 @@ var Compiler = function(){
 									if(slots[2] !== null && ('cdtn' in slots[2]))
 									{
 										if(cmd.cdtn !== ''){
-											errorCanvas.drawError('Console 12pt', 'ERROR: CONST16 defined condition bits disabled...', 5, 30, '#000');	
-											codeEditor.selectErrorLine();
+											if(const16E){
+												errorCanvas.drawError('Console 12pt', 'ERROR: CONST16 defined condition bits disabled...', 5, 30, '#000');	
+												codeEditor.selectErrorLine();
+											}
 										}
 
 										if(slots[2].src === undefined && slots[2].src === undefined){
