@@ -941,7 +941,7 @@ var Compiler = function(){
 			hexBundle.innerHTML = '0x00000000';
 
 			commandCounter = 0;
-			labels = {};
+			//labels = {};
 
 			for(var i = 0; i < 32; i++)
 			{
