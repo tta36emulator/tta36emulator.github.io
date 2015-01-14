@@ -43,6 +43,7 @@ body {
 
 .ctable{
 	border-collapse: collapse;
+	background-color: #fff;
 }
 
 tr:hover{
@@ -94,17 +95,25 @@ tr, td {
 #dstPane{
 	position: relative;
 	float:left;
-	clear:left;
+	padding-left:5px; 
 }
 
 #srcPane{
-	position:absolute;
-	margin-left: 180px;
+	position:relative;
+	float:left;
+	padding-left:5px; 
 }
 
 #flgPane{
-	position:absolute;
-	margin-left: 350px;
+	position:relative;
+	float:left;
+	padding-left:5px; 
+}
+
+#labelPane{
+	position:relative;
+	float:left;
+	padding-left:5px; 
 }
 
 .slot2{
@@ -149,10 +158,11 @@ tr, td {
 }
 
 #lay1{
-	position: absolute;
-	z-index: 0;
+	position: relative;
+	float:bottom;
 }
 
-#lay2{
-	z-index: 1;
+#lay3{
+	position: relative;
+	float:bottom;
 }

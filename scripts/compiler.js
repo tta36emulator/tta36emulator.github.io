@@ -95,6 +95,7 @@ var Compiler = function(){
 	var dstTable  = document.getElementById('dstTable');
 	var srcTable  = document.getElementById('srcTable');
 	var flgTable  = document.getElementById('flgTable');
+	var lblTable  = document.getElementById('lblTable');
 	var binBundle = document.getElementById('binaryBundle');
 	var hexBundle = document.getElementById('hexBundle');
 
@@ -237,10 +238,13 @@ var Compiler = function(){
 	};
 
 	var Core = function(){
-		var _core 			= this;
-		var flagsData 		= [];
-		var destinationData = [];
-		var sourseData		= [];
+		var _core 			= this,
+			flagsData 		= [],
+			destinationData = [],
+			sourseData		= [],
+			labels 		    = {},
+			offset 			= 0x6800,
+			commandCounter 	= 0;
 
 		var slot0_src = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","IP","DATA","ADD","ADDC",
 						 "SUB","XOR","AND","STATE","SH.R","P.IN"];
@@ -341,7 +345,18 @@ var Compiler = function(){
 						}
 					}
 				}
-			//############-condition-##################################
+			//############-condition-#####################################
+
+			//1.1 ############-labels-####################################
+				if(command.indexOf(': ') > -1) 
+				{
+					var labelPos = command.indexOf(': ');
+					var label    = command.substring(0, labelPos + 1);
+					var labelName = command.substring(0, labelPos);
+					command = command.replace(label,'').trim();
+					labels[labelName] = offset + commandCounter;
+				}
+			//############-labels-########################################
 
 			//2. ############-SRC-DST-####################################
 				if(command.indexOf('->') > -1 || command.indexOf('=>') > -1)
@@ -358,6 +373,13 @@ var Compiler = function(){
 
 					_src = srcdst[0].trim();
 					_dst = srcdst[1].trim();
+
+					//2.1 ############-labelCall-####################################
+						if(_src.indexOf('&') > -1) {
+							_src = _src.replace('&','');
+							_src = '#'+labels[_src];
+						}
+					//############-labels-########################################
 				}
 				else
 				{
@@ -396,6 +418,7 @@ var Compiler = function(){
 			if(_sf)
 				_cdtn = 'SF';
 
+			commandCounter++;
 			return {src:_src, dst:_dst, cdtn:_cdtn, const10:_c10, const16:_c16, sf:_sf, candidats:_slots, const10_16:_const, priority:_priority}
 		};
 
@@ -743,6 +766,7 @@ var Compiler = function(){
 			destroyChildren(srcTable);
 			destroyChildren(dstTable);
 			destroyChildren(flgTable);
+			destroyChildren(lblTable);
 
 			var c = 0;
 
@@ -793,7 +817,49 @@ var Compiler = function(){
 			}*/
 
 			c = 0;
-			for(var p in flags){
+			var row = document.createElement('tr');
+			var val = document.createElement('td');
+			var flg = document.createElement('td');
+			flg.innerHTML = "Flag";	
+			flg.className = 'regCol';	
+			val.innerHTML = "Value";
+			val.className = 'regCol';
+
+				row.appendChild(flg);
+				row.appendChild(val);
+				flgTable.appendChild(row);
+
+			for(var i = 2; i < flags.length; i++){
+				var row = document.createElement('tr');
+				row.setAttribute("id", "flg" + c);
+
+				var flg = document.createElement('td');
+				flg.className = 'regCol';
+
+				var val = document.createElement('td');
+				flg.innerHTML = flags[i];		
+				val.innerHTML = toHex(0);
+
+				row.appendChild(flg);
+				row.appendChild(val);
+				flgTable.appendChild(row);
+				c++;
+			}
+
+			c = 0;
+			row = document.createElement('tr');
+			val = document.createElement('td');
+			flg = document.createElement('td');
+			flg.innerHTML = "Labels";	
+			flg.className = 'regCol';	
+			val.innerHTML = "Address";
+			val.className = 'regCol';
+
+				row.appendChild(flg);
+				row.appendChild(val);
+				lblTable.appendChild(row);
+
+			for(p in labels){
 				var row = document.createElement('tr');
 				row.setAttribute("id", "flg" + c);
 
@@ -802,11 +868,11 @@ var Compiler = function(){
 
 				var val = document.createElement('td');
 				flg.innerHTML = p;		
-				val.innerHTML = toHex(flags[p]);
+				val.innerHTML = toHex(labels[p]);
 
 				row.appendChild(flg);
 				row.appendChild(val);
-				flgTable.appendChild(row);
+				lblTable.appendChild(row);
 				c++;
 			}
 		};
@@ -847,6 +913,10 @@ var Compiler = function(){
 		};
 
 		_core.reset = function(){
+			destroyChildren(srcTable);
+			destroyChildren(dstTable);
+			destroyChildren(flgTable);
+			destroyChildren(lblTable);
 
 			SlotsTable.values.slot0src.innerHTML = '*';
 			SlotsTable.values.slot0dst.innerHTML = '*';
@@ -866,7 +936,13 @@ var Compiler = function(){
 			SlotsTable.exp.slot2dst.innerHTML = '*';
 			SlotsTable.values.slot2cdtn.innerHTML = '*';
 			SlotsTable.exp.slot2cdtn.innerHTML = '*';
-	
+
+			binBundle.innerHTML = '000000000000000000000000000000000000';
+			hexBundle.innerHTML = '0x00000000';
+
+			commandCounter = 0;
+			labels = {};
+
 			for(var i = 0; i < 32; i++)
 			{
 				destinationData[i] = 0;
