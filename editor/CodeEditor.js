@@ -165,6 +165,8 @@ var CodeEditor = function () {
 			//editor.on('beforeChange', process);
 		};
 
+		self.getLinesCount = function(){return lines};
+
 		self.step = function(){
 			var s = lineArray[currentLineNum];
 

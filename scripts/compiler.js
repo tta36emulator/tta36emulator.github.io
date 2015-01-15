@@ -895,6 +895,11 @@ var Compiler = function(){
 			core.drawRegisters();
 		};
 
+		_core.run = function(){
+			for(var i = 0; i < codeEditor.getLinesCount(); i++)
+				_core.step();
+		};
+
 		_core.step = function(){
 			errorCanvas.clearColor('#cfc');
 			var s = codeEditor.step();
