@@ -423,10 +423,14 @@ var Compiler = function(){
 		var parseBundle = function(bundle){
 			//0. ############-comments-###################################
 				var commentBegin = bundle.indexOf(';');	
+
+				if(commentBegin < 0)
+					commentBegin = bundle.indexOf('//');	
+
 				if(commentBegin > -1) 
 					bundle = bundle.substring(0, commentBegin).trim();
 			//############-comments-######################################	
-			
+
 			var commands = bundle.split(',');
 			for(var i = 0; i < commands.length; i++)
 				commands[i] = commands[i].trim();
