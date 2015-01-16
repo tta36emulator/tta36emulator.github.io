@@ -48,8 +48,9 @@ var CodeEditor = function () {
 
 
 		self.preprocess = function(code){
-			 /*var lines = code.split("\n");
+			 var lines = code.split("\n");
 			 var resultCode = "";
+			 /*var resultCode = "";
 			 editStrings.length = 0;
 			 warnings.length = 0;
 
@@ -64,7 +65,19 @@ var CodeEditor = function () {
 			 }
 
 			return resultCode;*/
-			return code;
+
+			for(var i = 0; i < lines.length; i++){ 
+				var commentBegin = lines[i].indexOf('//');	
+				if(commentBegin > -1) 
+					lines[i] = lines[i].substring(0, commentBegin).trim();
+
+				if(i !=  lines.length - 1)
+					resultCode += lines[i] + '\n';
+				else
+					resultCode += lines[i];
+			}
+
+			return resultCode;
 		};
 
 		var isReadOnly = function(num){
@@ -164,6 +177,10 @@ var CodeEditor = function () {
 				lines = lineArray.length;
 			//editor.on('beforeChange', process);
 		};
+
+		self.appendTo = function(text) {
+		    editor.replaceRange(text, CodeMirror.Pos(currentLineNum-1));
+		}
 
 		self.getLinesCount = function(){return lines};
 

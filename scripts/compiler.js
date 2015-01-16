@@ -622,6 +622,7 @@ var Compiler = function(){
 
 			binBundle.innerHTML = sr2 + sr1 + sr0;
 			hexBundle.innerHTML = toHex2(sr2 + sr1 + sr0).result;
+			codeEditor.appendTo('\t\t\t\t\t//' + hexBundle.innerHTML);
 		};
 
 		var getBundleSlots = function(bundle){
