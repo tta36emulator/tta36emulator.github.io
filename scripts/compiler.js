@@ -810,7 +810,74 @@ var Compiler = function(){
 
 			createHeaders();
 
-			for(var p in registers){
+			for (p in registers)
+			{
+				var register = registers[p];
+
+				var row = document.createElement('tr');
+				row.setAttribute("id", "row" + c);
+
+				var addr = document.createElement('td');
+					addr.innerHTML = toHex(register.addr);
+
+				var reg = document.createElement('td');
+					reg.className = 'regCol';
+
+				var val = document.createElement('td');
+					val.className = 'dstStyle';
+
+				reg.innerHTML = p;		
+				val.innerHTML = toHex(register.value);
+
+				row.appendChild(addr);
+				row.appendChild(reg);
+				row.appendChild(val);
+				dstTable.appendChild(row);
+
+				if(changedRows.indexOf(p) > -1)
+					selectRow('row', c);
+
+				c++;
+
+				if(c > 32)
+					break;
+			}
+
+			c = 0;
+			for (p in registers)
+			{
+				if(c > 32) {
+					var register = registers[p];
+
+					var row = document.createElement('tr');
+					row.setAttribute("id", "row" + c);
+
+					var addr = document.createElement('td');
+						addr.innerHTML = toHex(register.addr);
+
+					var reg = document.createElement('td');
+						reg.className = 'regCol';
+
+					var val = document.createElement('td');
+						val.className = 'srcStyle';
+
+					reg.innerHTML = p;		
+					val.innerHTML = toHex(register.value);
+
+					row.appendChild(addr);
+					row.appendChild(reg);
+					row.appendChild(val);
+					srcTable.appendChild(row);
+
+					if(changedRows.indexOf(p) > -1)
+						selectRow('row', c);
+				}
+				c++;
+			}
+
+
+
+			/*for(var p in registers){
 				var register = registers[p];
 
 				var row = document.createElement('tr');
@@ -829,7 +896,21 @@ var Compiler = function(){
 				if(c < 33)
 					val.className = 'dstStyle';
 				else
+				{
+					var row = document.createElement('tr');
+					row.setAttribute("id", "row" + c);
+
+					var addr = document.createElement('td');
+						addr.innerHTML = toHex(register.addr);
+
+					var reg = document.createElement('td');
+						reg.className = 'regCol';
+
+					var val = document.createElement('td');
+					reg.innerHTML = p;		
+					val.innerHTML = toHex(register.value);
 					val.className = 'srcStyle';
+				}
 
 				row.appendChild(addr);
 				row.appendChild(reg);
@@ -840,7 +921,7 @@ var Compiler = function(){
 					selectRow('row', c);
 
 				c++;
-			}
+			}*/
 
 			changedRows = [];
 
