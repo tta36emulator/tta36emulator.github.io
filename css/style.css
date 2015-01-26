@@ -60,6 +60,21 @@ tr, td {
 	font-family: serif;
 }
 
+.dstStyle{
+	background-color: #afa;
+}
+
+.srcStyle{
+	background-color: #aaf;
+}
+
+.changedRowColor{
+	background-color: #aaa;
+	font-size: 14px;
+	font-weight: 700;
+	font-family: serif;
+}
+
 .currentLine{
 	background-color: #00f;
 }

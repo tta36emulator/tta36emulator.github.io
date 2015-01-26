@@ -202,13 +202,18 @@ var Compiler = function(){
 			node.removeChild(node.firstChild);
 	};
 
+	var clearClassChildren = function(node){
+		for(var i = 0; i < node.childNodes.length; i++)
+			node.childNodes[i].className = "";
+	};
+
 	var createHeaders = function(){
 		var row = document.createElement('tr');
 		var reg = document.createElement('td');
 		reg.className = 'regCol';
 		var val = document.createElement('td');
 		val.className = 'regCol';
-		reg.innerHTML = 'REG(dst)';
+		reg.innerHTML = 'REG';
 		val.innerHTML = 'value';
 
 		var addr = document.createElement('td');
@@ -218,32 +223,15 @@ var Compiler = function(){
 		row.appendChild(reg);
 		row.appendChild(val);
 		dstTable.appendChild(row);
-
-		row = document.createElement('tr');
-		reg = document.createElement('td');
-		reg.className = 'regCol';
-		val = document.createElement('td');
-		val.className = 'regCol';
-		reg.innerHTML = 'REG(src)';		
-		val.innerHTML = 'value';
-
-		var addr = document.createElement('td');
-		addr.innerHTML = 'Address';
-		addr.className = 'regCol';
-
-		row.appendChild(addr);
-		row.appendChild(reg);
-		row.appendChild(val);
-		srcTable.appendChild(row);
 	};
 
 	var Core = function(){
 		var _core 			= this,
-			flagsData 		= [],
-			destinationData = [],
-			sourseData		= [],
+			flagsData 		= {},
 			labels 		    = {},
+			registers       = {},
 			offset 			= 0x6800,
+			changedRows 	= [],
 			commandCounter 	= 0;
 
 		var slot0_src = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","IP","DATA","ADD","ADDC",
@@ -264,14 +252,55 @@ var Compiler = function(){
 		var slot2_dst = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","IP","ADDR","DATA","ADD.A",
 						 "ADD.B","AND.A","AND.B","SUB.A","SUB.B","SH","ADDC.A","ADDC.B","XOR.A","XOR.B","STATE","P.OUT","NULL"];
 
-		var flags	= ["NZ?","NC?","Z?","C?","S?","E?"];			 
+		var flags	= ["NZ?","NC?","Z?","C?","S?","E?"];
 
 
-		for(var i = 0; i < 32; i++)
-		{
-			destinationData[i] = 0;
-			sourseData[i] = 0;
-		}
+		registers["R0"]   	= {addr:0,value:0};
+		registers["R1"]   	= {addr:1,value:0};
+		registers["R2"]   	= {addr:2,value:0};
+		registers["R3"]   	= {addr:3,value:0};
+		registers["R4"]   	= {addr:4,value:0};
+		registers["R5"]   	= {addr:5,value:0};
+		registers["R6"]   	= {addr:6,value:0};
+		registers["R7"]   	= {addr:7,value:0};
+		registers["R8"]   	= {addr:8,value:0};
+		registers["R9"]   	= {addr:9,value:0};
+		registers["R10"]  	= {addr:10,value:0};
+		registers["R11"]  	= {addr:11,value:0};
+		registers["R12"]  	= {addr:12,value:0};
+		registers["R13"]  	= {addr:13,value:0};
+		registers["R14"]  	= {addr:14,value:0};
+		registers["IP"]   	= {addr:15,value:0};
+		registers["pADDR"]  = {addr:16,value:0};
+		registers["ADDR"]   = {addr:16,value:0};
+		registers["DATA"]   = {addr:17,value:0};
+		registers["ADD.A"]  = {addr:18,value:0};
+		registers["ADD.B"]  = {addr:19,value:0};
+		registers["AND.A"]  = {addr:20,value:0};
+		registers["AND.B"]  = {addr:21,value:0};
+		registers["SUB.A"]  = {addr:22,value:0};
+		registers["SUB.B"]  = {addr:23,value:0};
+		registers["SH"]     = {addr:24,value:0};
+		registers["ADDC.A"] = {addr:25,value:0};
+		registers["ADDC.B"] = {addr:26,value:0};
+		registers["XOR.A"]  = {addr:27,value:0};
+		registers["XOR.B"]  = {addr:28,value:0};
+		registers["STATE"]  = {addr:29,value:0};
+		registers["P.OUT"]  = {addr:30,value:0};
+		registers["NULL"]   = {addr:31,value:0};
+
+		registers["sDATA"]    = {addr:15,value:0};
+		registers["LINK"]    = {addr:15,value:0};
+		registers["ADD"]     = {addr:16,value:0};
+		registers["ADDC"]    = {addr:17,value:0};
+		registers["SUB"]     = {addr:18,value:0};
+		registers["XOR"]     = {addr:19,value:0};
+		registers["AND"]     = {addr:20,value:0};
+		registers["sSTATE"]   = {addr:21,value:0};
+		registers["SH.R"]  	 = {addr:22,value:0};
+		registers["P.IN"]  	 = {addr:23,value:0};
+		registers["CONST10"] = {addr:24,value:0};
+		registers["CONST16"] = {addr:25,value:0};
 
 		flags.C = 0;
 		flags.Z = 0;
@@ -781,49 +810,39 @@ var Compiler = function(){
 
 			createHeaders();
 
-			/*for(var p in destination){
+			for(var p in registers){
+				var register = registers[p];
+
 				var row = document.createElement('tr');
-				row.setAttribute("id", "dst" + c);
+				row.setAttribute("id", "row" + c);
 
 				var addr = document.createElement('td');
-				addr.innerHTML = toHex(c);
+					addr.innerHTML = toHex(register.addr);
 
 				var reg = document.createElement('td');
-				reg.className = 'regCol';
+					reg.className = 'regCol';
 
 				var val = document.createElement('td');
 				reg.innerHTML = p;		
-				val.innerHTML = toHex(destinationData[destination[p]]);
+				val.innerHTML = toHex(register.value);
+
+				if(c < 33)
+					val.className = 'dstStyle';
+				else
+					val.className = 'srcStyle';
+
 				row.appendChild(addr);
 				row.appendChild(reg);
 				row.appendChild(val);
 				dstTable.appendChild(row);
+
+				if(changedRows.indexOf(p) > -1)
+					selectRow('row', c);
+
 				c++;
-			}*/
+			}
 
-			/*c = 0;
-			for(var p in sourses){
-				if(c > 16 && c < 22)
-				{
-					var addr = document.createElement('td');
-					addr.innerHTML = toHex(c);
-
-					var row = document.createElement('tr');
-					row.setAttribute("id", "src" + c);
-
-					var reg = document.createElement('td');
-					reg.className = 'regCol';
-
-					var val = document.createElement('td');
-					reg.innerHTML = p;		
-					val.innerHTML = toHex(sourseData[sourses[p]]);
-					row.appendChild(addr);
-					row.appendChild(reg);
-					row.appendChild(val);
-					srcTable.appendChild(row);				
-				}
-				c++;
-			}*/
+			changedRows = [];
 
 			c = 0;
 			var row = document.createElement('tr');
@@ -886,23 +905,24 @@ var Compiler = function(){
 			}
 		};
 
-		_core.selectRow = function(prefix, num){
+		var selectRow = function(prefix, num){
 			var id = prefix + num;
 			var row = document.getElementById(id);
-			//row.style.backgroundColor = "#cfc";
+			row.className = "changedRowColor";
+			clearClassChildren(row);
 		};
 
-		_core.update = function(){
-			sourseData[getSRC_ADDR("ADD")]  = destinationData[getSRC_ADDR("ADD.A")]  + destinationData[getSRC_ADDR("ADD.B")];
-			sourseData[getSRC_ADDR("ADDC")] = destinationData[getSRC_ADDR("ADDC.A")] + destinationData[getSRC_ADDR("ADDC.A")] + flags.C;
-			sourseData[getSRC_ADDR("SUB")]  = destinationData[getSRC_ADDR("SUB.B")]  - destinationData[getSRC_ADDR("SUB.A")];
-			sourseData[getSRC_ADDR("XOR")]  = destinationData[getSRC_ADDR("XOR.B")]  ^ destinationData[getSRC_ADDR("XOR.A")];
+		var calculateFunctions = function(){
+			registers["ADD"].value  = registers["ADD.A"].value  + registers["ADD.B"].value;
+			registers["ADDC"].value = registers["ADDC.A"].value + registers["ADDC.A"].value + flags.C;
+			registers["SUB"].value  = registers["SUB.B"].value  - registers["SUB.A"].value;
+			registers["XOR"].value  = registers["XOR.B"].value  ^ registers["XOR.A"].value;
 			//hardRegisters[i] = hardRegisters[i] % 0x10000
 		};
 
 		_core.refresh = function(){
 			//executeSlots(slots);
-			core.update();
+			calculateFunctions();
 			core.drawRegisters();
 		};
 
@@ -914,17 +934,83 @@ var Compiler = function(){
 		_core.step = function(){
 			errorCanvas.clearColor('#cfc');
 			var s = codeEditor.step();
-			//currentCommand.innerHTML = s;
 			var slots = getBundleSlots(s);
+			runSlots(slots)
 			drawSlots(slots);
 			_core.refresh();
 			commandCounter++;
 		};
 
-		_core.runCommand = function(command){
-			var parsed = parseCommand(command);
-			if(!parsed.const10 && !parsed.const16) //const
-			   destinationData[parsed.dst] = sourseData[getSRC_ADDR(parsed.src)];
+		var runSlots = function(slots){
+			var slot0 = slots[0],
+				slot1 = slots[1],
+				slot2 = slots[2];
+
+			if(slot0.const10 || slot0.const16)
+			{
+				var s1 = slot1.src,
+					d1 = slot1.dst,
+					s2 = slot2.src,
+					d2 = slot2.dst;
+
+				registers["CONST10"].value = parseInt(slot0.const10, 2);
+				registers[d1].value = registers[s1].value;
+				registers[d2].value = registers[s2].value;
+
+				changedRows.push(d1);
+				changedRows.push(d2);
+				changedRows.push("CONST10");
+			}
+			else
+			{
+				var s0 = slot0.src,
+					d0 = slot0.dst,
+					s1 = slot1.src,
+					d1 = slot1.dst,
+					s2 = slot2.src,
+					d2 = slot2.dst;
+
+				if(d0 !== d1 &&  d1 !== d2 && d0 != d2)	
+				{
+					registers[d0].value = registers[s0].value;
+					registers[d1].value = registers[s1].value;
+					registers[d2].value = registers[s2].value;
+
+					changedRows.push(d0);
+					changedRows.push(d1);
+					changedRows.push(d2);
+				}
+				else
+				{
+
+					if(d0 === d1 && d1 === d2 && d0 === d2)
+					{
+						registers[d0].value = registers[s0].value | registers[s1].value | registers[s2].value;
+						changedRows.push(d0);
+					}
+					else
+					{
+						if(d0 === d1){
+							registers[d0].value = registers[s0].value | registers[s1].value;
+							registers[d2].value = registers[s2].value;
+							changedRows.push(d0);
+							changedRows.push(d2);
+						}
+						else if(d1 === d2){
+							registers[d1].value = registers[s1].value | registers[s2].value;
+							registers[d0].value = registers[s0].value;
+							changedRows.push(d0);
+							changedRows.push(d1);
+						}
+						else if(d0 === d2){
+							registers[d1].value = registers[s1].value;
+							registers[d0].value = registers[s0].value | registers[s2].value;	
+							changedRows.push(d0);	
+							changedRows.push(d1);	
+						}
+					}
+				}
+			}
 		};
 
 		_core.reset = function(){
@@ -958,11 +1044,9 @@ var Compiler = function(){
 			commandCounter = 0;
 			//labels = {};
 
-			for(var i = 0; i < 32; i++)
-			{
-				destinationData[i] = 0;
-				sourseData[i] 	   = 0;
-			}
+			for(register in registers)
+				registers[register].value = 0;
+
 			codeEditor.reset();
 		};
 	};
@@ -973,7 +1057,4 @@ var Compiler = function(){
 
 	var core = new Core();	
 	core.refresh();
-	core.selectRow('src', 18);
-	core.selectRow('dst', 7);
-	core.selectRow('flg', 2);
 };
