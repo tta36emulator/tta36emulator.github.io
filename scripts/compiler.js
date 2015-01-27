@@ -136,18 +136,16 @@ var Compiler = function(){
 	errorCanvas.clearCanvas('#cfc');
 
 	codeEditor.refresh();
-	codeEditor.loadCode("LINK -> R14, R2 -> ADDC.A, R2 -> ADDC.B\nR1 -> ADD.B, ADDC -> ADDC.A, ADDC -> ADDC.B\n#0x000F -> AND.A, R1 -> ADD.A\nADDC -> R5, ADD -> ADD.A, ADD -> ADD.B\nR5 -> ADDC.A, ADD -> ADD.A, ADD -> ADD.B\nR5 -> ADDC.B, ADD -> ADD.A, ADD -> ADD.B\nADDC -> R5, ADD -> ADD.A, ADD -> ADD.B\nR5 -> ADDC.A, ADD -> ADD.A, ADD -> ADD.B\nR5 -> ADDC.B, ADD -> ADD.A, ADD -> ADD.B\nR0 -> SH, ADD -> ADD.A, ADD -> ADD.B\nSH.R => ADD.B, ADD -> ADD.A, ADDC -> R5\nNC? #0x00F0 -> AND.A, ADD -> ADDR\nNC? R5 -> R2, DATA -> AND.B\nR14 -> IP, AND -> DATA, R2 -> DATA");
 
-	var zeroFill  = function( number, width )
+		//fill hex nubmer zero
+	var zeroFill  = function(number, width )
 	{
 		width -= number.toString().length;
 		if ( width > 0 ) return new Array(width + (/\./.test(number) ? 2 : 1) ).join( '0' ) + number;
 		return number;
 	};
 
-	var toDec = function(hexNumber) {
-        return parseInt(hexNumber,16);
-	};
+	var toDec = function(hexNumber) {return parseInt(hexNumber,16);};
 
 	var toBin = function(decValue){
 		if(decValue >= 0) return decValue.toString(2);
@@ -209,16 +207,19 @@ var Compiler = function(){
 
 	var createHeaders = function(){
 		var row = document.createElement('tr');
+
 		var reg = document.createElement('td');
-		reg.className = 'regCol';
+			reg.className = 'regCol';
+			reg.innerHTML = 'REG';
+
 		var val = document.createElement('td');
-		val.className = 'regCol';
-		reg.innerHTML = 'REG';
-		val.innerHTML = 'value';
+			val.className = 'regCol';
+			val.innerHTML = 'value';
 
 		var addr = document.createElement('td');
-		addr.innerHTML = 'Address';
-		addr.className = 'regCol';
+			addr.innerHTML = 'Address';
+			addr.className = 'regCol';
+
 		row.appendChild(addr);
 		row.appendChild(reg);
 		row.appendChild(val);
@@ -234,78 +235,90 @@ var Compiler = function(){
 			changedRows 	= [],
 			commandCounter 	= 0;
 
-		var slot0_src = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","IP","DATA","ADD","ADDC",
-						 "SUB","XOR","AND","STATE","SH.R","P.IN"];
+		// slots src and dst ----------------------------
 
-		var slot1_src = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","IP","DATA","ADD","ADDC",
-						 "SUB","XOR","AND","STATE","SH.R","P.IN","CONST10","CONST16"];
+			var slot0_src = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","IP","DATA","ADD","ADDC",
+							 "SUB","XOR","AND","STATE","SH.R","P.IN"];
 
-		var slot2_src = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","IP","LINK","ADD","ADDC",
-						 "SUB","XOR","AND","STATE","SH.R","P.IN","CONST10","CONST16"];
+			var slot1_src = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","IP","DATA","ADD","ADDC",
+							 "SUB","XOR","AND","STATE","SH.R","P.IN","CONST10","CONST16"];
 
-		var slot0_dst = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","IP","pADDR","DATA","ADD.A",
-						 "ADD.B","AND.A","AND.B","SUB.A","SUB.B","SH","ADDC.A","ADDC.B","XOR.A","XOR.B","STATE","P.OUT","NULL"];
+			var slot2_src = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","IP","LINK","ADD","ADDC",
+							 "SUB","XOR","AND","STATE","SH.R","P.IN","CONST10","CONST16"];
 
-		var slot1_dst = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","IP","pADDR","DATA","ADD.A",
-						 "ADD.B","AND.A","AND.B","SUB.A","SUB.B","SH","ADDC.A","ADDC.B","XOR.A","XOR.B","STATE","P.OUT","NULL"];
+			var slot0_dst = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","IP","pADDR","DATA","ADD.A",
+							 "ADD.B","AND.A","AND.B","SUB.A","SUB.B","SH","ADDC.A","ADDC.B","XOR.A","XOR.B","STATE","P.OUT","NULL"];
 
-		var slot2_dst = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","IP","ADDR","DATA","ADD.A",
-						 "ADD.B","AND.A","AND.B","SUB.A","SUB.B","SH","ADDC.A","ADDC.B","XOR.A","XOR.B","STATE","P.OUT","NULL"];
+			var slot1_dst = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","IP","pADDR","DATA","ADD.A",
+							 "ADD.B","AND.A","AND.B","SUB.A","SUB.B","SH","ADDC.A","ADDC.B","XOR.A","XOR.B","STATE","P.OUT","NULL"];
 
-		var flags	= ["NZ?","NC?","Z?","C?","S?","E?"];
+			var slot2_dst = ["R0","R1","R2","R3","R4","R5","R6","R7","R8","R9","R10","R11","R12","R13","R14","IP","ADDR","DATA","ADD.A",
+							 "ADD.B","AND.A","AND.B","SUB.A","SUB.B","SH","ADDC.A","ADDC.B","XOR.A","XOR.B","STATE","P.OUT","NULL"];
 
+			var flags	= ["NZ?","NC?","Z?","C?","S?","E?"];
 
-		registers["R0"]   	= {addr:0,value:0};
-		registers["R1"]   	= {addr:1,value:0};
-		registers["R2"]   	= {addr:2,value:0};
-		registers["R3"]   	= {addr:3,value:0};
-		registers["R4"]   	= {addr:4,value:0};
-		registers["R5"]   	= {addr:5,value:0};
-		registers["R6"]   	= {addr:6,value:0};
-		registers["R7"]   	= {addr:7,value:0};
-		registers["R8"]   	= {addr:8,value:0};
-		registers["R9"]   	= {addr:9,value:0};
-		registers["R10"]  	= {addr:10,value:0};
-		registers["R11"]  	= {addr:11,value:0};
-		registers["R12"]  	= {addr:12,value:0};
-		registers["R13"]  	= {addr:13,value:0};
-		registers["R14"]  	= {addr:14,value:0};
-		registers["IP"]   	= {addr:15,value:0};
-		registers["pADDR"]  = {addr:16,value:0};
-		registers["ADDR"]   = {addr:16,value:0};
-		registers["DATA"]   = {addr:17,value:0};
-		registers["ADD.A"]  = {addr:18,value:0};
-		registers["ADD.B"]  = {addr:19,value:0};
-		registers["AND.A"]  = {addr:20,value:0};
-		registers["AND.B"]  = {addr:21,value:0};
-		registers["SUB.A"]  = {addr:22,value:0};
-		registers["SUB.B"]  = {addr:23,value:0};
-		registers["SH"]     = {addr:24,value:0};
-		registers["ADDC.A"] = {addr:25,value:0};
-		registers["ADDC.B"] = {addr:26,value:0};
-		registers["XOR.A"]  = {addr:27,value:0};
-		registers["XOR.B"]  = {addr:28,value:0};
-		registers["STATE"]  = {addr:29,value:0};
-		registers["P.OUT"]  = {addr:30,value:0};
-		registers["NULL"]   = {addr:31,value:0};
+		//-------------------------------------------------
 
-		registers["sDATA"]    = {addr:15,value:0};
-		registers["LINK"]    = {addr:15,value:0};
-		registers["ADD"]     = {addr:16,value:0};
-		registers["ADDC"]    = {addr:17,value:0};
-		registers["SUB"]     = {addr:18,value:0};
-		registers["XOR"]     = {addr:19,value:0};
-		registers["AND"]     = {addr:20,value:0};
-		registers["sSTATE"]   = {addr:21,value:0};
-		registers["SH.R"]  	 = {addr:22,value:0};
-		registers["P.IN"]  	 = {addr:23,value:0};
-		registers["CONST10"] = {addr:24,value:0};
-		registers["CONST16"] = {addr:25,value:0};
+		// registers and flags---------------------------
 
-		flags.C = 0;
-		flags.Z = 0;
-		flags.S = 0;
-		flags.E = 0;
+			registers["R0"]   	= {addr:0,value:0};
+			registers["R1"]   	= {addr:1,value:0};
+			registers["R2"]   	= {addr:2,value:0};
+			registers["R3"]   	= {addr:3,value:0};
+			registers["R4"]   	= {addr:4,value:0};
+			registers["R5"]   	= {addr:5,value:0};
+			registers["R6"]   	= {addr:6,value:0};
+			registers["R7"]   	= {addr:7,value:0};
+			registers["R8"]   	= {addr:8,value:0};
+			registers["R9"]   	= {addr:9,value:0};
+			registers["R10"]  	= {addr:10,value:0};
+			registers["R11"]  	= {addr:11,value:0};
+			registers["R12"]  	= {addr:12,value:0};
+			registers["R13"]  	= {addr:13,value:0};
+			registers["R14"]  	= {addr:14,value:0};
+			registers["IP"]   	= {addr:15,value:0};
+			registers["pADDR"]  = {addr:16,value:0};
+			registers["ADDR"]   = {addr:16,value:0};
+			registers["DATA"]   = {addr:17,value:0};
+			registers["ADD.A"]  = {addr:18,value:0};
+			registers["ADD.B"]  = {addr:19,value:0};
+			registers["AND.A"]  = {addr:20,value:0};
+			registers["AND.B"]  = {addr:21,value:0};
+			registers["SUB.A"]  = {addr:22,value:0};
+			registers["SUB.B"]  = {addr:23,value:0};
+			registers["SH"]     = {addr:24,value:0};
+			registers["ADDC.A"] = {addr:25,value:0};
+			registers["ADDC.B"] = {addr:26,value:0};
+			registers["XOR.A"]  = {addr:27,value:0};
+			registers["XOR.B"]  = {addr:28,value:0};
+			registers["STATE"]  = {addr:29,value:0};
+			registers["P.OUT"]  = {addr:30,value:0};
+			registers["NULL"]   = {addr:31,value:0};
+
+			registers["sDATA"]    = {addr:15,value:0};
+			registers["LINK"]    = {addr:15,value:0};
+			registers["ADD"]     = {addr:16,value:0};
+			registers["ADDC"]    = {addr:17,value:0};
+			registers["SUB"]     = {addr:18,value:0};
+			registers["XOR"]     = {addr:19,value:0};
+			registers["AND"]     = {addr:20,value:0};
+			registers["sSTATE"]   = {addr:21,value:0};
+			registers["SH.R"]  	 = {addr:22,value:0};
+			registers["P.IN"]  	 = {addr:23,value:0};
+			registers["CONST10"] = {addr:24,value:0};
+			registers["CONST16"] = {addr:25,value:0};
+
+			flagsData["C-1"] = 0;
+			flagsData["Z-1"] = 0;
+			flagsData["S-1"] = 0;
+			flagsData["E-1"] = 0;
+
+			flagsData["C-2"] = 0;
+			flagsData["Z-2"] = 0;
+			flagsData["S-2"] = 0;
+			flagsData["E-2"] = 0;
+
+		// ------------------------------------------------
 
 		var getSRC_ADDR = function(slot, src) {
 			switch(slot){
@@ -334,12 +347,6 @@ var Compiler = function(){
 				 break;
 			}
 		}
-
-		var checkFlags = function(value){
-			(value > 0x8000) ? flags.S = 1 : flags.S = 0;
-			(value === 0)    ? flags.Z = 1 : flags.Z = 0;
-			(value > 0xFFFF) ? flags.C = 1 : flags.C = 0;
-		};
 
 		var parseCommand = function(command){
 			var _src  = "",
@@ -536,20 +543,26 @@ var Compiler = function(){
 
 			if(slots[0] !== null)
 			{
-				if(slots[0].const10 !== undefined){
-					SlotsTable.values.slot0src.innerHTML = slots[0].const10.substring(5,10);
-					SlotsTable.values.slot0dst.innerHTML = slots[0].const10.substring(0,5);
-					SlotsTable.exp.slot0src.innerHTML = "c10 5bit (l)";
-					SlotsTable.exp.slot0dst.innerHTML = "c10 5bit (h)";
+				var s0HTML = null,
+					cnst   = null;
+
+				if(slots[0].const16 !== undefined){
+					s0HTML = "c16"; 
+					cnst = slots[0].const16;
 				}
-				else if(slots[0].const16 !== undefined){
-					SlotsTable.values.slot0src.innerHTML = slots[0].const16.substring(5,10);
-					SlotsTable.values.slot0dst.innerHTML = slots[0].const16.substring(0,5);
-					SlotsTable.exp.slot0src.innerHTML = "c16 5bit (l)";
-					SlotsTable.exp.slot0dst.innerHTML = "c16 5bit (h)";
-				}
-				else
+				else 
 				{
+					s0HTML = "c10";
+					cnst = slots[0].const10;
+				}
+
+				if(cnst != undefined && cnst !== null){
+					SlotsTable.values.slot0src.innerHTML = cnst.substring(5,10);
+					SlotsTable.values.slot0dst.innerHTML = cnst.substring(0,5);
+					SlotsTable.exp.slot0src.innerHTML = s0HTML + "5bit(l)";
+					SlotsTable.exp.slot0dst.innerHTML = s0HTML + "5bit(h)";
+				}
+				else{
 					SlotsTable.values.slot0src.innerHTML = getSRC_ADDR(0, slots[0].src);
 					SlotsTable.values.slot0dst.innerHTML = getDST_ADDR(0, slots[0].dst);
 					SlotsTable.exp.slot0src.innerHTML = slots[0].src;
@@ -700,8 +713,10 @@ var Compiler = function(){
 							}
 
 							if(cmd.const16){
+								var _fullConst = cmd.const10_16;
+								cmd.const10_16 = cmd.const10_16 % 0x10000;
 								var c = get16bitFromConst(cmd.const10_16);
-								slots[0] = {const16:c.substring(6,16)};
+								slots[0] = {const16:c.substring(6,16), fullconst:_fullConst};
 								slots[1] = {};
 								slots[2] = {};
 								slots[1].cdtn = c.substring(3,6);
@@ -715,7 +730,7 @@ var Compiler = function(){
 							switch(cmd.candidats[i]){
 								case 0:
 									if (slots[0] !== null) continue;
-									slots[0] = {src:cmd.src, dst:cmd.dst, cdtn:cmd.cdtn, sf:cmd.sf};
+									slots[0] = {src:cmd.src, dst:cmd.dst};
 									r = true;
 									break;
 								case 1:
@@ -875,54 +890,6 @@ var Compiler = function(){
 				c++;
 			}
 
-
-
-			/*for(var p in registers){
-				var register = registers[p];
-
-				var row = document.createElement('tr');
-				row.setAttribute("id", "row" + c);
-
-				var addr = document.createElement('td');
-					addr.innerHTML = toHex(register.addr);
-
-				var reg = document.createElement('td');
-					reg.className = 'regCol';
-
-				var val = document.createElement('td');
-				reg.innerHTML = p;		
-				val.innerHTML = toHex(register.value);
-
-				if(c < 33)
-					val.className = 'dstStyle';
-				else
-				{
-					var row = document.createElement('tr');
-					row.setAttribute("id", "row" + c);
-
-					var addr = document.createElement('td');
-						addr.innerHTML = toHex(register.addr);
-
-					var reg = document.createElement('td');
-						reg.className = 'regCol';
-
-					var val = document.createElement('td');
-					reg.innerHTML = p;		
-					val.innerHTML = toHex(register.value);
-					val.className = 'srcStyle';
-				}
-
-				row.appendChild(addr);
-				row.appendChild(reg);
-				row.appendChild(val);
-				dstTable.appendChild(row);
-
-				if(changedRows.indexOf(p) > -1)
-					selectRow('row', c);
-
-				c++;
-			}*/
-
 			changedRows = [];
 
 			c = 0;
@@ -938,7 +905,7 @@ var Compiler = function(){
 				row.appendChild(val);
 				flgTable.appendChild(row);
 
-			for(var i = 2; i < flags.length; i++){
+			for(p in flagsData){
 				var row = document.createElement('tr');
 				row.setAttribute("id", "flg" + c);
 
@@ -946,8 +913,8 @@ var Compiler = function(){
 				flg.className = 'regCol';
 
 				var val = document.createElement('td');
-				flg.innerHTML = flags[i];		
-				val.innerHTML = toHex(0);
+				flg.innerHTML = p;		
+				val.innerHTML = flagsData[p];
 
 				row.appendChild(flg);
 				row.appendChild(val);
@@ -993,69 +960,279 @@ var Compiler = function(){
 			clearClassChildren(row);
 		};
 
-		var calculateFunctions = function(){
-			registers["ADD"].value  = registers["ADD.A"].value  + registers["ADD.B"].value;
-			registers["ADDC"].value = registers["ADDC.A"].value + registers["ADDC.A"].value + flags.C;
-			registers["SUB"].value  = registers["SUB.B"].value  - registers["SUB.A"].value;
+		var calculateFlags = function(value,slot){
+			(value > 0x8000) ? flagsData["S-"+slot] = 1 : flagsData["S-"+slot] = 0;
+			(value === 0)    ? flagsData["Z-"+slot] = 1 : flagsData["Z-"+slot] = 0;
+		};
+
+		var calculateFlags2 = function(value,slot){
+			(value > 0x8000) ? flagsData["S-"+slot] = 1 : flagsData["S-"+slot] = 0;
+			(value === 0)    ? flagsData["Z-"+slot] = 1 : flagsData["Z-"+slot] = 0;
+			(value > 0xFFFF) ? flagsData["C-"+slot] = 1 : flagsData["C-"+slot] = 0;
+		};
+
+		var add  = function(){ 
+			var value = registers["ADD.A"].value  + registers["ADD.B"].value;
+			registers["ADD"].value = value % 0x10000;
+			return value;
+		};
+
+		var sub  = function(){ 
+			registers["SUB"].value = registers["SUB.B"].value  - registers["SUB.A"].value;
+			return registers["SUB"].value;
+		};
+
+		var addc = function(){
+			var value = registers["ADDC.A"].value  + registers["ADDC.B"].value + flags.C;
+			registers["ADDC"].value = value % 0x10000;
+			return value;
+		};
+
+		var xor  = function(){
 			registers["XOR"].value  = registers["XOR.B"].value  ^ registers["XOR.A"].value;
-			//hardRegisters[i] = hardRegisters[i] % 0x10000
+			return registers["XOR"].value;
 		};
 
-		_core.refresh = function(){
-			//executeSlots(slots);
-			calculateFunctions();
-			core.drawRegisters();
+		var shr  = function(){
+			var shr = registers["SH"].value >>> 1;
+			registers["SH"].value   = shr % 0x10000;
+			registers["SH.R"].value = shr % 0x10000;
+			return shr;
 		};
 
-		_core.run = function(){
-			for(var i = 0; i < codeEditor.getLinesCount(); i++)
-				_core.step();
-		};
+		var isFunction = function(src){
+			var result = false;
+			switch(src)
+			{
+				case "ADD":
+					result = true;
+					break;
+				case "ADDC":
+					result = true;
+					break;
+				case "SUB":
+					result = true;
+					break;
+				case "XOR":
+					result = true;
+					break;
+				case "SH.R":
+					result = true;
+					break;
+			}
 
-		_core.step = function(){
-			errorCanvas.clearColor('#cfc');
-			var s = codeEditor.step();
-			var slots = getBundleSlots(s);
-			runSlots(slots)
-			drawSlots(slots);
-			_core.refresh();
-			commandCounter++;
+			return result;
+		}
+
+		var calculateFunction = function(func){
+			var result = 0;
+			switch(func)
+			{
+				case "ADD":
+					result = add();
+					changedRows.push(func);
+					break;
+				case "ADDC":
+					result = addc();
+					changedRows.push(func);
+					break;
+				case "SUB":
+					result = sub();
+					changedRows.push(func);
+					break;
+				case "XOR":
+					result = xor();
+					changedRows.push(func);
+					break;
+				case "SH.R":
+					result = shr();
+					changedRows.push(func);
+					break;
+			}
+
+			return result;
 		};
 
 		var runSlots = function(slots){
 			var slot0 = slots[0],
 				slot1 = slots[1],
-				slot2 = slots[2];
+				slot2 = slots[2],
+				s0 	  = slot0.src,
+				d0 	  = slot0.dst,
+				s1 	  = slot1.src,
+				d1 	  = slot1.dst,
+				s2 	  = slot2.src,
+				d2 	  = slot2.dst,
+				val0  = 0,
+				val1  = 0,
+				val2  = 0,
+				src0  = registers[s0],
+				src1  = registers[s1],
+				src2  = registers[s2];
 
 			if(slot0.const10 || slot0.const16)
 			{
-				var s1 = slot1.src,
-					d1 = slot1.dst,
-					s2 = slot2.src,
-					d2 = slot2.dst;
+				if(slot0.const10){
+					registers["CONST10"].value = parseInt(slot0.const10, 2);
+					changedRows.push("CONST10");
+				}
 
-				registers["CONST10"].value = parseInt(slot0.const10, 2);
-				registers[d1].value = registers[s1].value;
-				registers[d2].value = registers[s2].value;
+				if(slot0.const16){
+					var c16 = slot2.cdtn + slot1.cdtn + slot0.const16;
+					registers["CONST16"].value = parseInt(c16, 2);
+					changedRows.push("CONST16");
+				}
 
 				changedRows.push(d1);
 				changedRows.push(d2);
-				changedRows.push("CONST10");
+
+				val1 = src1.value;
+				val2 = src2.value;
+
+				if(!isFunction(s1))
+					calculateFlags(val1, 1);
+				else
+				{
+					val1 = calculateFunction(s1);
+					calculateFlags2(val1,1);
+				}
+	
+				if(!isFunction(s2))
+					calculateFlags(val2, 2);
+				else
+				{
+					val2 = calculateFunction(s2);
+					calculateFlags2(val2,2);
+				}
+
+				registers[d1].value = val1;
+				registers[d2].value = val2;	
 			}
 			else
 			{
-				var s0 = slot0.src,
-					d0 = slot0.dst,
-					s1 = slot1.src,
-					d1 = slot1.dst,
-					s2 = slot2.src,
-					d2 = slot2.dst;
+				var a = [];
+				if(d0 != 'NULL')
+					a.push({id:0,reg:d0, src:s0});
+				if(d1 != 'NULL')
+					a.push({id:1,reg:d1, src:s1});
+				if(d2 != 'NULL')
+					a.push({id:2,reg:d2, src:s2});
 
-				if(d0 !== d1 &&  d1 !== d2 && d0 != d2)	
+				val0 = src0.value;
+				val1 = src1.value;
+				val2 = src2.value;
+
+				var executeSlot = function(id, isOR){
+					switch(id)
+					{
+						case 0:
+							if(isOR === undefined || isOR.length === 0)
+							{
+								if(isFunction(s0))
+									val0 = calculateFunction(s0);	
+								registers[d0].value = val0;
+							}
+							else
+							{
+								for(var i = 0; i < isOR.length; i++)
+									registers[d0].value |= registers[isOR[i]].value;
+							}
+							registers[d0].value = val1 % 0x10000;
+							changedRows.push(d0);
+							break;
+						case 1:
+							if(isOR === undefined || isOR.length === 0)
+							{
+								if(!isFunction(s1))
+									calculateFlags(src1.value, 1);
+								else
+								{
+									val1 = calculateFunction(s1);
+									calculateFlags2(val1,1);
+								}
+							}
+							else
+							{
+								for(var i = 0; i < isOR.length; i++)
+									registers[d1].value |= registers[isOR[i]].value;
+
+								calculateFlags(registers[d1].value, 1);
+							}
+							registers[d1].value = val1 % 0x10000;
+							changedRows.push(d1);
+							break;
+						case 2:
+							if(isOR === undefined || isOR.length === 0)
+							{
+								if(!isFunction(s2))
+									calculateFlags(src2.value, 2);
+								else
+								{
+									val2 = calculateFunction(s2);
+									calculateFlags2(val2,2);
+								}
+							}
+							else
+							{
+								for(var i = 0; i < isOR.length; i++)
+									registers[d2].value |= registers[isOR[i]].value;
+
+								calculateFlags(registers[d2].value, 2);
+							}
+							registers[d2].value = val2 % 0x10000;
+							changedRows.push(d2);
+							break;
+					}
+				};
+
+				if(a.length === 1)
+					executeSlot(a[0].id);
+				else if(a.length === 2)
 				{
+					if(a[0].reg !== a[1].reg){
+						executeSlot(a[0].id);
+						executeSlot(a[1].id);
+					}
+					else
+					{
+						var isOR = [];
+						isOR.push(a[0].src);
+						isOR.push(a[1].src);
+						executeSlot(a[0].id, isOR);
+					}
+				}
+				else if(a.length === 3)
+				{
+					if(a[0].reg !== a[1].reg && a[0].reg !== a[2].reg && a[1].reg !== a[2].reg){
+						executeSlot(a[0].id);
+						executeSlot(a[1].id);
+						executeSlot(a[2].id);
+					}
+					else
+						alert(a[0].reg);
+				}
+
+				/*if(d0 !== d1 && d1 !== d2 && d0 !== d2)	
+				{
+					if(!isFunction(s1))
+						calculateFlags(src1.value, 1);
+					else
+					{
+						val1 = calculateFunction(s1);
+						calculateFlags2(val1,1);
+					}
+
+					if(!isFunction(s2))
+						calculateFlags(src2.value, 2);
+					else
+					{
+						val2 = calculateFunction(s2);
+						calculateFlags2(val2,2);
+					}
+
 					registers[d0].value = registers[s0].value;
-					registers[d1].value = registers[s1].value;
-					registers[d2].value = registers[s2].value;
+					registers[d1].value = val1;
+					registers[d2].value = val2;
 
 					changedRows.push(d0);
 					changedRows.push(d1);
@@ -1063,7 +1240,6 @@ var Compiler = function(){
 				}
 				else
 				{
-
 					if(d0 === d1 && d1 === d2 && d0 === d2)
 					{
 						registers[d0].value = registers[s0].value | registers[s1].value | registers[s2].value;
@@ -1090,8 +1266,27 @@ var Compiler = function(){
 							changedRows.push(d1);	
 						}
 					}
-				}
+				}*/
 			}
+		};
+
+		_core.refresh = function(){
+			core.drawRegisters();
+		};
+
+		_core.run = function(){
+			for(var i = 0; i < codeEditor.getLinesCount(); i++)
+				_core.step();
+		};
+
+		_core.step = function(){
+			errorCanvas.clearColor('#cfc');
+			var s = codeEditor.step();
+			var slots = getBundleSlots(s);
+			runSlots(slots)
+			drawSlots(slots);
+			_core.refresh();
+			commandCounter++;
 		};
 
 		_core.reset = function(){
@@ -1132,10 +1327,7 @@ var Compiler = function(){
 		};
 	};
 
-	_compiler.getCore = function(){
-		return core;
-	};
-
+	_compiler.getCore = function(){return core;};
 	var core = new Core();	
 	core.refresh();
 };
