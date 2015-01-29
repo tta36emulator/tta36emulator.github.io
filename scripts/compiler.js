@@ -466,6 +466,14 @@ var Compiler = function(){
 					if(command.indexOf('.ORG') > -1)
 					{
 						var str = command.replace(".ORG"," ").trim();
+						if(str.indexOf('0x') > -1)
+						{
+							str = str.replace('0x','').trim();
+							str = toDec(str);
+						}
+						else
+							str = toDec(str);
+
 						offset = str;
 					}
 					else if(command.indexOf('.SET') > -1)
@@ -727,7 +735,6 @@ var Compiler = function(){
 			var sr0 = sd0 + ss0;
 			var sr1 = sc1 + sd1 + ss1;
 			var sr2 = sc2 + sd2 + ss2;
-
 			var bin = sr2 + sr1 + sr0;
 
 			binBundle.innerHTML = bin;
@@ -1313,8 +1320,8 @@ var Compiler = function(){
 						executeSlot(a[1].id);
 						executeSlot(a[2].id);
 					}
-					else
-						alert(a[0].reg);
+					//else
+					//	alert(a[0].reg);
 				}
 
 				/*if(d0 !== d1 && d1 !== d2 && d0 !== d2)	
