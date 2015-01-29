@@ -1434,12 +1434,17 @@ var Compiler = function(){
 
 			binBundle.innerHTML = '000000000000000000000000000000000000';
 			hexBundle.innerHTML = '0x00000000';
+			codeDump.innerHTML = '';
 
 			commandCounter  = 0;
 			dumpString 		= "";
 			wordCounter 	= 0;
 			binaryDump		= [];
 			strID 			= 0;
+
+			endDump = [];
+			endString = '';
+			endCounter = 0;
 			//labels = {};
 
 			for(register in registers)
