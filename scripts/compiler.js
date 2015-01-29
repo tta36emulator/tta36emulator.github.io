@@ -98,6 +98,7 @@ var Compiler = function(){
 	var lblTable  = document.getElementById('lblTable');
 	var binBundle = document.getElementById('binaryBundle');
 	var hexBundle = document.getElementById('hexBundle');
+	var codeDump  = document.getElementById('codeDump');
 
 	var SlotsTable = {
 		values:{
@@ -214,7 +215,7 @@ var Compiler = function(){
 
 		var val = document.createElement('td');
 			val.className = 'regCol';
-			val.innerHTML = 'value';
+			val.innerHTML = 'Value';
 
 		var addr = document.createElement('td');
 			addr.innerHTML = 'Address';
@@ -224,16 +225,59 @@ var Compiler = function(){
 		row.appendChild(reg);
 		row.appendChild(val);
 		dstTable.appendChild(row);
+
+			row = document.createElement('tr');
+			val = document.createElement('td');
+			val.innerHTML = "Value";
+			val.className = 'regCol';
+			flg = document.createElement('td');
+			flg.innerHTML = "Flag";	
+			flg.className = 'regCol';			
+			row.appendChild(flg);
+			row.appendChild(val);
+		flgTable.appendChild(row);
+
+			row = document.createElement('tr');
+			val = document.createElement('td');
+			flg = document.createElement('td');
+			flg.innerHTML = "Labels";	
+			flg.className = 'regCol';	
+			val.innerHTML = "Address";
+			val.className = 'regCol';
+			row.appendChild(flg);
+			row.appendChild(val);
+		lblTable.appendChild(row);
+
+		row = document.createElement('tr');
+			val = document.createElement('td');
+			flg = document.createElement('td');
+			flg.innerHTML = "Const";	
+			flg.className = 'regCol';	
+			val.innerHTML = "Value";
+			val.className = 'regCol';
+			row.appendChild(flg);
+			row.appendChild(val);
+		cnsTable.appendChild(row);
 	};
 
 	var Core = function(){
 		var _core 			= this,
 			flagsData 		= {},
 			labels 		    = {},
+			consts 		    = {},
 			registers       = {},
 			offset 			= 0x6800,
 			changedRows 	= [],
-			commandCounter 	= 0;
+			commandCounter 	= 0,
+			binaryDump 		= [],
+			endDump			= [],
+			dumpString 		= "",
+			wordCounter 	= 0,
+			strID 			= 0,
+			strEndID        = 0,
+			endString		= 0,
+			endCounter		= 0;
+
 
 		// slots src and dst ----------------------------
 
@@ -419,8 +463,24 @@ var Compiler = function(){
 				}
 				else
 				{
-					errorCanvas.drawError('Console 12pt', 'ERROR: -> or => not found...', 5, 30, '#000');
-					codeEditor.selectErrorLine();
+					if(command.indexOf('.ORG') > -1)
+					{
+						var str = command.replace(".ORG"," ").trim();
+						offset = str;
+					}
+					else if(command.indexOf('.SET') > -1)
+					{
+						var str = command.replace(".SET"," ").trim(),
+							spacePos = str.indexOf(' '),
+							n = str.substring(0, spacePos).trim(),
+							v = str.substring(spacePos + 1, str.length).trim();
+						consts[n] = v;
+					}
+					else
+					{
+						errorCanvas.drawError('Console 12pt', 'ERROR: -> or => not found...', 5, 30, '#000');
+						codeEditor.selectErrorLine();
+					}
 				}
 			//############-SRC-DST-####################################
 
@@ -433,7 +493,13 @@ var Compiler = function(){
 						_src = toDec(_src);
 					}
 					else
-						_src = parseInt(_src);
+					{
+						var s = parseInt(_src);
+						if(isNaN(s))
+							_src = consts[_src];
+						else
+							_src = s;
+					}
 
 					(_src > 0x3FF) ? _c16 = true : _c10 = true;				
 				}
@@ -662,9 +728,49 @@ var Compiler = function(){
 			var sr1 = sc1 + sd1 + ss1;
 			var sr2 = sc2 + sd2 + ss2;
 
-			binBundle.innerHTML = sr2 + sr1 + sr0;
+			var bin = sr2 + sr1 + sr0;
+
+			binBundle.innerHTML = bin;
 			hexBundle.innerHTML = toHex2(sr2 + sr1 + sr0).result;
 			codeEditor.appendTo('\t\t\t\t\t//' + hexBundle.innerHTML);
+
+			var bstr = bin.substring(4,36);
+			var send = bin.substring(0, 4);
+
+			var sstr = toHex2(bstr).result;
+			var estr = toHex2(send).result;
+
+			if(wordCounter !== 0)
+				sstr = sstr + "_";
+
+			if(endCounter !== 0)
+				estr = estr + "_";
+
+			dumpString = sstr + dumpString;
+			endString  = estr + endString;
+
+			wordCounter++;
+			endCounter++;
+
+			if(endCounter > 64)
+			{
+				endDump.push(".INITP_0" + strEndID + "(256'h" + endString + "),");
+				endString  = "";
+				endCounter = 0;
+				strEndID++;
+			}
+
+			if(wordCounter > 7)
+			{
+				if(strID < 0x10)
+					binaryDump.push(".INIT_0" + toHex2(toBin(strID)).result + "(256'h" + dumpString + "),");
+				else
+					binaryDump.push(".INIT_" + toHex2(toBin(strID)).result + "(256'h" + dumpString + "),");
+
+				dumpString  = "";
+				wordCounter = 0;
+				strID++;
+			}
 		};
 
 		var getBundleSlots = function(bundle){
@@ -820,6 +926,7 @@ var Compiler = function(){
 			destroyChildren(dstTable);
 			destroyChildren(flgTable);
 			destroyChildren(lblTable);
+			destroyChildren(cnsTable);
 
 			var c = 0;
 
@@ -893,17 +1000,6 @@ var Compiler = function(){
 			changedRows = [];
 
 			c = 0;
-			var row = document.createElement('tr');
-			var val = document.createElement('td');
-			var flg = document.createElement('td');
-			flg.innerHTML = "Flag";	
-			flg.className = 'regCol';	
-			val.innerHTML = "Value";
-			val.className = 'regCol';
-
-				row.appendChild(flg);
-				row.appendChild(val);
-				flgTable.appendChild(row);
 
 			for(p in flagsData){
 				var row = document.createElement('tr');
@@ -923,17 +1019,6 @@ var Compiler = function(){
 			}
 
 			c = 0;
-			row = document.createElement('tr');
-			val = document.createElement('td');
-			flg = document.createElement('td');
-			flg.innerHTML = "Labels";	
-			flg.className = 'regCol';	
-			val.innerHTML = "Address";
-			val.className = 'regCol';
-
-				row.appendChild(flg);
-				row.appendChild(val);
-				lblTable.appendChild(row);
 
 			for(p in labels){
 				var row = document.createElement('tr');
@@ -949,6 +1034,26 @@ var Compiler = function(){
 				row.appendChild(flg);
 				row.appendChild(val);
 				lblTable.appendChild(row);
+				c++;
+			}
+
+			c = 0;
+
+			for(p in consts){
+				var row = document.createElement('tr');
+				row.setAttribute("id", "cns" + c);
+
+				var cns = document.createElement('td');
+				cns.className = 'regCol';
+				cns.innerHTML = p;
+
+				var val = document.createElement('td');	
+				val.innerHTML = consts[p];
+				val.className = 'regCol';
+
+				row.appendChild(cns);
+				row.appendChild(val);
+				cnsTable.appendChild(row);
 				c++;
 			}
 		};
@@ -1277,6 +1382,12 @@ var Compiler = function(){
 		_core.run = function(){
 			for(var i = 0; i < codeEditor.getLinesCount(); i++)
 				_core.step();
+
+			for(var i = 0; i < binaryDump.length; i++)
+				codeDump.innerHTML += binaryDump[i] + "\n";
+
+			for(var i = 0; i < endDump.length; i++)
+				codeDump.innerHTML += endDump[i] + "\n";
 		};
 
 		_core.step = function(){
@@ -1317,7 +1428,11 @@ var Compiler = function(){
 			binBundle.innerHTML = '000000000000000000000000000000000000';
 			hexBundle.innerHTML = '0x00000000';
 
-			commandCounter = 0;
+			commandCounter  = 0;
+			dumpString 		= "";
+			wordCounter 	= 0;
+			binaryDump		= [];
+			strID 			= 0;
 			//labels = {};
 
 			for(register in registers)

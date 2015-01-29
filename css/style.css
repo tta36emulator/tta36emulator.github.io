@@ -107,7 +107,7 @@ tr, td {
 	font-family: serif;
 }
 
-#dstPane{
+/*#dstPane{
 	position: relative;
 	float:left;
 	padding-left:5px; 
@@ -129,6 +129,37 @@ tr, td {
 	position:relative;
 	float:left;
 	padding-left:5px; 
+}*/
+
+#lblTable{
+	position:absolute;
+	margin-left:0; 
+}
+
+#cnsTable{
+	position:absolute;
+	margin-left:100px; 
+}
+
+#srcTable{
+	position:absolute;
+	left:230px; 
+}
+
+#dstTable{
+	position:absolute;
+	margin-left:405px; 
+}
+
+#flgTable{
+	position:absolute;
+	margin-left:575px; 
+}
+
+#codeDump
+{
+	width: 100%;
+	height: 150px;
 }
 
 .slot2{
@@ -154,10 +185,8 @@ tr, td {
 
 #editorPane {
 	display:block;
-	opacity:1;
-	float:left;
-	position:relative;
-	left:1px;
+	position:absolute;
+	left:650px;
 }
 
 #codePane {

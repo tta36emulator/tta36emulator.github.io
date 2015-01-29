@@ -8,111 +8,100 @@
 		<link rel="stylesheet" href="codemirror/theme/elegant.css">
 	</head>
 	<body>
-		<div id="labelPane">
-			<table id = 'lblTable' class = 'ctable'>
+
+		<table id = 'lblTable' class = 'ctable'>
+			<tr>
+				<td class = 'regCol'> Label </td>
+				<td class = 'regCol'> Address </td>
+			</tr>
+		</table>	
+
+		<table id = 'dstTable' class = 'ctable'>
+			<tr>
+				<td class = 'regCol'> Address </td>
+				<td class = 'regCol'> Register(dest) </td>
+				<td class = 'regCol'> Value </td>
+			</tr>
+		</table>
+
+		<table id = 'srcTable' class = 'ctable'>
+			<tr>
+				<td class = 'regCol'> Address </td>
+				<td class = 'regCol'> Register(src) </td>
+				<td class = 'regCol'> Value </td>
+			</tr>
+		</table>
+
+		<table id = 'flgTable' class = 'ctable'>
+			<tr>
+				<td class = 'regCol'> Flag </td>
+				<td class = 'regCol'> Value </td>
+			</tr>
+		</table>
+
+		<table id = 'cnsTable' class = 'ctable'>
+			<tr>
+				<td class = 'regCol'> Const </td>
+				<td class = 'regCol'> Value </td>
+			</tr>
+		</table>
+
+		<div id="editorPane">
+			<canvas tabindex='1' id="lay1" width="350" height="200" class="levelCanvas"></canvas>
+			<canvas tabindex='3' id="lay3" width="350" height="200"></canvas>
+
+			<table id = 'ttaWord' class = 'ttaWord'>
+				<tr><td colspan="8" class = 'bundle'> TTA-36 Bundle </td></tr>
 				<tr>
-					<td class = 'regCol'> Label </td>
-					<td class = 'regCol'> Address </td>
+					<td colspan="3" class = 'slot2'> slot2 </td>
+					<td colspan="3" class = 'slot1'> slot1 </td>
+					<td colspan="2" class = 'slot0'> slot0 </td>
 				</tr>
+
+				<tr>
+					<td id ='slot2CDTNExp' class = 'regCol'> C? </td>
+					<td id ='slot2DSTExp'  class = 'regCol'> R8 </td>
+					<td id ='slot2SRCExp'  class = 'regCol'> R7 </td>
+					<td id ='slot1CDTNExp' class = 'regCol'> NZ? </td>
+					<td id ='slot1DSTExp'  class = 'regCol'> R4 </td>
+					<td id ='slot1SRCExp'  class = 'regCol'> R3 </td>
+					<td id ='slot0DSTExp'  class = 'regCol'> R2 </td>
+					<td id ='slot0SRCExp' class = 'regCol'>  R1 </td>		
+				</tr>
+
+				<tr>
+					<td id ='slot2CDTNVal' class = 'regCol'> cdtn2 </td>
+					<td id ='slot2DSTVal'  class = 'regCol'> dst2 </td>
+					<td id ='slot2SRCVal'  class = 'regCol'> src2 </td>
+					<td id ='slot1CDTNVal' class = 'regCol'> cdtn1 </td>
+					<td id ='slot1DSTVal'  class = 'regCol'> dst1 </td>
+					<td id ='slot1SRCVal'  class = 'regCol'> src1 </td>
+					<td id ='slot0DSTVal'  class = 'regCol'> dst0 </td>
+					<td id ='slot0SRCVal'  class = 'regCol'> src0 </td>	
+				</tr>
+
+				<tr>
+					<td class = 'slot0'> BUNDLE </td>
+					<td class = 'Binary'> Binary </td>
+					<td id ='binaryBundle' class = 'Binary'> 000000000000000000000000000000000000 </td>
+				</tr>
+				<tr>
+					<td class = 'slot0'> BUNDLE </td>
+					<td class = 'Binary'> Hex </td>
+				    <td id ='hexBundle' class = 'Binary'> 0x00000000 </td>
+				<tr> 
 			</table>	
-		</div> 
 
-		<div id="dstPane">
-			<table id = 'dstTable' class = 'ctable'>
-				<tr>
-					<td class = 'regCol'> Address </td>
-					<td class = 'regCol'> Register(dest) </td>
-					<td> Value </td>
-				</tr>
-			</table>
-		</div> 	
+			<div id="codePane"><textarea id="code"></textarea></div>
+			<div id="dumpPane"><textarea id="codeDump"></textarea></div>
+			<div id="buttonPane">
+			 	<input id = "btnLoadProgram" class = "cbutton" type = "button" value = "Load Program" onclick = "core.loadProgram()">
+			 	<input id = "btnStep"  class = "cbutton" type = "button" value = "Step" onclick = "compiler.getCore().step()">
+			 	<input id = "btnRun"   class = "cbutton" type = "button" value = "Run" onclick = "compiler.getCore().run()">
+			 	<input id = "btnReset" class = "cbutton" type = "button" value = "Reset" onclick = "compiler.getCore().reset()">
+			</div>
+   	    </div>	   
 
-		<div id="srcPane">
-			<table id = 'srcTable' class = 'ctable'>
-				<tr>
-					<td class = 'regCol'> Address </td>
-					<td class = 'regCol'> Register(src) </td>
-					<td> Value </td>
-				</tr>
-			</table>
-		</div>
-
-		<div id="flgPane">
-			<table id = 'flgTable' class = 'ctable'>
-				<tr>
-					<td class = 'regCol'> Flag </td>
-					<td> Value </td>
-				</tr>
-			</table>	
-		</div> 
-
-		 <div id="container">  
-			<div id="panes">
-
-				<div id="screenPane">
-					<div>
-						
-					</div>
-				</div>
-
-				<!--<label id = 'currentCommand' class = 'command'>0x00->0x00</label>-->
-
-				<div id="editorPane">
-					<canvas tabindex='1' id="lay1" width="350" height="200" class="levelCanvas"></canvas>
-					<canvas tabindex='3' id="lay3" width="350" height="200"></canvas>
-
-					<table id = 'ttaWord' class = 'ttaWord'>
-						<tr><td colspan="8" class = 'bundle'> TTA-36 Bundle </td></tr>
-						<tr>
-							<td colspan="3" class = 'slot2'> slot2 </td>
-							<td colspan="3" class = 'slot1'> slot1 </td>
-							<td colspan="2" class = 'slot0'> slot0 </td>
-						</tr>
-
-						<tr>
-							<td id ='slot2CDTNExp' class = 'regCol'> C? </td>
-							<td id ='slot2DSTExp'  class = 'regCol'> R8 </td>
-							<td id ='slot2SRCExp'  class = 'regCol'> R7 </td>
-							<td id ='slot1CDTNExp' class = 'regCol'> NZ? </td>
-							<td id ='slot1DSTExp'  class = 'regCol'> R4 </td>
-							<td id ='slot1SRCExp'  class = 'regCol'> R3 </td>
-							<td id ='slot0DSTExp'  class = 'regCol'> R2 </td>
-							<td id ='slot0SRCExp' class = 'regCol'>  R1 </td>		
-						</tr>
-
-						<tr>
-							<td id ='slot2CDTNVal' class = 'regCol'> cdtn2 </td>
-							<td id ='slot2DSTVal'  class = 'regCol'> dst2 </td>
-							<td id ='slot2SRCVal'  class = 'regCol'> src2 </td>
-							<td id ='slot1CDTNVal' class = 'regCol'> cdtn1 </td>
-							<td id ='slot1DSTVal'  class = 'regCol'> dst1 </td>
-							<td id ='slot1SRCVal'  class = 'regCol'> src1 </td>
-							<td id ='slot0DSTVal'  class = 'regCol'> dst0 </td>
-							<td id ='slot0SRCVal'  class = 'regCol'> src0 </td>	
-						</tr>
-
-						<tr>
-							<td class = 'slot0'> BUNDLE </td>
-							<td class = 'Binary'> Binary </td>
-							<td id ='binaryBundle' class = 'Binary'> 000000000000000000000000000000000000 </td>
-						</tr>
-						<tr>
-							<td class = 'slot0'> BUNDLE </td>
-							<td class = 'Binary'> Hex </td>
-						    <td id ='hexBundle' class = 'Binary'> 0x00000000 </td>
-						<tr> 
-					</table>	
-
-					<div id="codePane"><textarea id="code"></textarea></div>
-					<div id="buttonPane">
-					 	<input id = "btnLoadProgram" class = "cbutton" type = "button" value = "Load Program" onclick = "core.loadProgram()">
-					 	<input id = "btnStep"  class = "cbutton" type = "button" value = "Step" onclick = "compiler.getCore().step()">
-					 	<input id = "btnRun"   class = "cbutton" type = "button" value = "Run" onclick = "compiler.getCore().run()">
-					 	<input id = "btnReset" class = "cbutton" type = "button" value = "Reset" onclick = "compiler.getCore().reset()">
-					</div>
-				</div> 
-		    </div>	   
-		 </div>	
 		 <script src="codemirror/codemirror.js" charset="UTF-8"></script> 
 		 <script src="codemirror/javascript.js" charset="UTF-8"></script>	
 		 <script src="editor/CodeEditor.js" charset="UTF-8"></script>  

@@ -182,6 +182,17 @@ var CodeEditor = function () {
 		    editor.replaceRange(text, CodeMirror.Pos(currentLineNum-1));
 		}
 
+		self.insertLine = function(text) {
+		    var doc = editor.getDoc();
+			var cursor = doc.getCursor();
+			var line = doc.getLine(cursor.line);
+			var pos = { 
+			    line: self.getLinesCount,
+			    ch: line.length - 1
+			}
+			doc.replaceRange(text + '\n', pos);
+		}
+
 		self.getLinesCount = function(){return lines};
 
 		self.step = function(){
