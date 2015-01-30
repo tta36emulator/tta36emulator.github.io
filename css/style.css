@@ -138,22 +138,22 @@ tr, td {
 
 #cnsTable{
 	position:absolute;
-	margin-left:100px; 
+	margin-left:150px; 
 }
 
 #srcTable{
 	position:absolute;
-	left:230px; 
+	left:330px; 
 }
 
 #dstTable{
 	position:absolute;
-	margin-left:405px; 
+	margin-left:510px; 
 }
 
 #flgTable{
 	position:absolute;
-	margin-left:575px; 
+	margin-left:685px; 
 }
 
 #codeDump
@@ -186,7 +186,8 @@ tr, td {
 #editorPane {
 	display:block;
 	position:absolute;
-	left:650px;
+	top:0px;
+	left:780px;
 }
 
 #codePane {
@@ -202,11 +203,12 @@ tr, td {
 }
 
 #lay1{
-	position: relative;
-	float:bottom;
+	position: absolute;
+	left:1500px;
 }
 
 #lay3{
-	position: relative;
-	float:bottom;
+	position: absolute;
+	left:1500px;
+	top:210px;
 }

@@ -1,3 +1,67 @@
+//#############################-INPUT-#############################################
+	(function() {
+		var pressedKeys = {}, mouse = {LBUTTON: false, RBUTTON: false, MBUTTON: false};
+		document.oncontextmenu = function (){return false};
+
+		function setKey(event, status) {
+			var code = event.keyCode, key;
+			switch(code) {
+				case 53:
+					key = '5'; break;
+				case 54:
+					key = '6'; break;	
+				case 82:
+					key = 'R'; break;
+				case 69:
+					key = 'E'; break;
+				default:
+					key = String.fromCharCode(code);
+					//alert(code);
+			}
+
+			pressedKeys[key] = status;
+		}
+
+		document.addEventListener('keydown', function(e) {
+			setKey(e, true);
+		});
+
+		document.addEventListener('keyup', function(e) {
+			setKey(e, false);
+		});
+
+		document.addEventListener('mousedown', function(e) {
+			if(e.which === 1)
+				mouse["LBUTTON"] = true;
+			else if(e.which === 2)
+				mouse["MBUTTON"] = true;
+			else if(e.which === 3)
+				mouse["RBUTTON"] = true;
+		});
+
+		document.addEventListener('mouseup', function(e) {
+				mouse["LBUTTON"] = false;
+				mouse["RBUTTON"] = false;
+				mouse["MBUTTON"] = false;
+		});
+
+		window.addEventListener('blur', function() {
+			pressedKeys = {};
+		    mouse = {LBUTTON: false, RBUTTON: false, MBUTTON: false};
+		});
+
+		window.input = {
+			isDown: function(key) {
+				return pressedKeys[key.toUpperCase()];
+			},
+			isClick:function(button){
+				return mouse[button];
+			}
+		};
+	})();
+//#############################-INPUT-#############################################
+
+
 var Compiler = function(){
 
 	//#############################-Xcanvas-###########################################
@@ -262,13 +326,13 @@ var Compiler = function(){
 
 	var Core = function(){
 		var _core 			= this,
+			PC 				= 0x6800;
 			flagsData 		= {},
 			labels 		    = {},
 			consts 		    = {},
 			registers       = {},
 			offset 			= 0x6800,
 			changedRows 	= [],
-			commandCounter 	= 0,
 			binaryDump 		= [],
 			endDump			= [],
 			dumpString 		= "",
@@ -276,7 +340,11 @@ var Compiler = function(){
 			strID 			= 0,
 			strEndID        = 0,
 			endString		= 0,
-			endCounter		= 0;
+			endCounter		= 0,
+			stepPress 		= false,
+			runPress		= false,
+			resetPress 		= false,
+			executePress 	= false;
 
 
 		// slots src and dst ----------------------------
@@ -390,29 +458,37 @@ var Compiler = function(){
 				 return slot2_dst.indexOf(dst);
 				 break;
 			}
-		}
+		};
+
+		var getSlotCandidats = function(s,d,_sf,_cdtn){
+			var _slots = [];
+
+			if(_sf === false && _cdtn === "" && getSRC_ADDR(0,s) > -1 && getDST_ADDR(0,d) > -1)
+				_slots.push(0);
+
+			if(getSRC_ADDR(1,s) > -1 && getDST_ADDR(1,d) > -1)
+				_slots.push(1);
+
+			if(getSRC_ADDR(2,s) > -1 && getDST_ADDR(2,d) > -1)
+				_slots.push(2);
+
+			return _slots;
+		};
 
 		var parseCommand = function(command){
+
+			if(command === "")
+				return -1;
+
 			var _src  = "",
 				_dst  = "",
 				_cdtn = "",
+				_slots = [],
 				_c10  = false,
 				_c16  = false,
 				_sf   = false,
-				_slots = [],
 				_const = "-",
 				_priority = -1;
-
-				var getSlotCandidats = function(s,d){
-					if(_sf === false && _cdtn === "" && getSRC_ADDR(0,s) > -1 && getDST_ADDR(0,d) > -1)
-						_slots.push(0);
-
-					if(getSRC_ADDR(1,s) > -1 && getDST_ADDR(1,d) > -1)
-						_slots.push(1);
-
-					if(getSRC_ADDR(2,s) > -1 && getDST_ADDR(2,d) > -1)
-						_slots.push(2);
-				}
 
 			//1. ############-condition-##################################
 				if(command.indexOf('?') > -1) 
@@ -428,13 +504,16 @@ var Compiler = function(){
 			//############-condition-#####################################
 
 			//1.1 ############-labels-####################################
-				if(command.indexOf(': ') > -1) 
+				if(command.indexOf(':') > -1) 
 				{
-					var labelPos = command.indexOf(': ');
-					var label    = command.substring(0, labelPos + 1);
-					var labelName = command.substring(0, labelPos);
-					command = command.replace(label,'').trim();
-					labels[labelName] = offset + commandCounter;
+					var labelPos = command.indexOf(':'),
+						labelName = command.substring(0, labelPos);
+
+					command = command.replace(labelName + ":",'').trim();
+					labels[labelName] = PC;
+
+					if(command === "")
+						return -1;
 				}
 			//############-labels-########################################
 
@@ -475,6 +554,8 @@ var Compiler = function(){
 							str = toDec(str);
 
 						offset = str;
+						PC = offset;
+						codeDump.innerHTML += "SET PC = 0x" + toHex2(toBin(offset)).result + "\n";
 					}
 					else if(command.indexOf('.SET') > -1)
 					{
@@ -484,11 +565,17 @@ var Compiler = function(){
 							v = str.substring(spacePos + 1, str.length).trim();
 						consts[n] = v;
 					}
+					else if(command.indexOf('END') > -1)
+					{
+						codeDump.innerHTML += "Program end!" + "\n";
+					}
 					else
 					{
 						errorCanvas.drawError('Console 12pt', 'ERROR: -> or => not found...', 5, 30, '#000');
 						codeEditor.selectErrorLine();
 					}
+
+					return -1;
 				}
 			//############-SRC-DST-####################################
 
@@ -515,11 +602,11 @@ var Compiler = function(){
 
 			//4. ############-Find slot candidats-########################
 				if(!_c16 && !_c10)
-					getSlotCandidats(_src,_dst);
+					_slots = getSlotCandidats(_src,_dst,_sf,_cdtn);
 				else{
 					_const = _src;
 					(_src > 0x3FF) ? _src = 'CONST16' : _src = 'CONST10';
-					getSlotCandidats(_src,_dst);
+					_slots = getSlotCandidats(_src,_dst,_sf,_cdtn);
 				}
 
 				_priority = _slots.length;
@@ -527,10 +614,14 @@ var Compiler = function(){
 	
 			if(_sf)
 				_cdtn = 'SF';
-			return {src:_src, dst:_dst, cdtn:_cdtn, const10:_c10, const16:_c16, sf:_sf, candidats:_slots, const10_16:_const, priority:_priority}
+
+			return {src:_src, dst:_dst, cdtn:_cdtn, const10:_c10, const16:_c16, sf:_sf, candidats:_slots, const10_16:_const, priority:_priority}	
 		};
 
 		var parseBundle = function(bundle){
+			//-. ############-tabulators-###################################
+				bundle = bundle.replace('\t','');
+
 			//0. ############-comments-###################################
 				var commentBegin = bundle.indexOf(';');	
 
@@ -614,6 +705,11 @@ var Compiler = function(){
 		}
 
 		var drawSlots = function(slots){
+
+			if(slots[0].dst === "NULL" && slots[1].dst === "NULL" && slots[2].dst === "NULL")
+				return;
+
+			PC++;
 
 			if(slots[0] !== null)
 			{
@@ -739,7 +835,9 @@ var Compiler = function(){
 
 			binBundle.innerHTML = bin;
 			hexBundle.innerHTML = toHex2(sr2 + sr1 + sr0).result;
-			codeEditor.appendTo('\t\t\t\t\t//' + hexBundle.innerHTML);
+
+			//codeEditor.appendTo('\t\t\t\t\t//' + hexBundle.innerHTML);
+			codeDump.innerHTML += hexBundle.innerHTML + "\n";
 
 			var bstr = bin.substring(4,36);
 			var send = bin.substring(0, 4);
@@ -785,8 +883,11 @@ var Compiler = function(){
 			var slots = [null,null,null];
 			var parsedCommands = [];
 
-			for(var i = 0; i < commands.length; i++)
-				parsedCommands.push(parseCommand(commands[i]));
+			for(var i = 0; i < commands.length; i++){
+				var command = parseCommand(commands[i]);
+				if(command !== -1)
+					parsedCommands.push(command);
+			}
 
 			//############-Create slots-#################################
 
@@ -1311,6 +1412,7 @@ var Compiler = function(){
 						isOR.push(a[0].src);
 						isOR.push(a[1].src);
 						executeSlot(a[0].id, isOR);
+						//alert(a[0].reg);
 					}
 				}
 				else if(a.length === 3)
@@ -1321,7 +1423,7 @@ var Compiler = function(){
 						executeSlot(a[2].id);
 					}
 					//else
-					//	alert(a[0].reg);
+						//alert(a[0].reg);
 				}
 
 				/*if(d0 !== d1 && d1 !== d2 && d0 !== d2)	
@@ -1382,6 +1484,14 @@ var Compiler = function(){
 			}
 		};
 
+		_core.loadProgram = function(){
+			_core.reset();
+			_core.run();
+			_core.reset();
+			core.drawRegisters();
+			codeDump.innerHTML += "Program executed... done!" + "\n";
+		};
+
 		_core.refresh = function(){
 			core.drawRegisters();
 		};
@@ -1389,6 +1499,40 @@ var Compiler = function(){
 		_core.run = function(){
 			for(var i = 0; i < codeEditor.getLinesCount(); i++)
 				_core.step();
+
+			if(wordCounter > 0)
+			{
+				for(var i = 0; i < 8 - wordCounter; i++)
+				{
+					if(i === 0)
+						dumpString = "_00000000_" + dumpString;
+					else if(i === 7 - wordCounter)
+						dumpString = "00000000" + dumpString;
+					else
+						dumpString = "_00000000" + dumpString;
+				}
+
+				if(strID < 0x10)
+					binaryDump.push(".INIT_0" + toHex2(toBin(strID)).result + "(256'h" + dumpString + "),");
+				else
+					binaryDump.push(".INIT_" + toHex2(toBin(strID)).result + "(256'h" + dumpString + "),");
+			}
+
+			if(endCounter > 0)
+			{
+				for(var i = 0; i < 64 - endCounter; i++)
+				{
+					if(i === 0)
+						endString = "_00000000_" + endString;
+					else if(i === 63 - endCounter)
+						endString = "00000000" + endString;
+					else
+						endString = "_00000000" + endString;
+				}
+
+				if(strID < 0x10)
+					endDump.push(".INITP_0" + toHex2(toBin(strEndID)).result + "(256'h" + endString + "),");
+			}
 
 			for(var i = 0; i < binaryDump.length; i++)
 				codeDump.innerHTML += binaryDump[i] + "\n";
@@ -1404,7 +1548,6 @@ var Compiler = function(){
 			runSlots(slots)
 			drawSlots(slots);
 			_core.refresh();
-			commandCounter++;
 		};
 
 		_core.reset = function(){
@@ -1436,7 +1579,6 @@ var Compiler = function(){
 			hexBundle.innerHTML = '0x00000000';
 			codeDump.innerHTML = '';
 
-			commandCounter  = 0;
 			dumpString 		= "";
 			wordCounter 	= 0;
 			binaryDump		= [];
@@ -1445,16 +1587,70 @@ var Compiler = function(){
 			endDump = [];
 			endString = '';
 			endCounter = 0;
+			PC = 0x6800;
+
+			flagsData["C-1"] = 0;
+			flagsData["Z-1"] = 0;
+			flagsData["S-1"] = 0;
+			flagsData["E-1"] = 0;
+
+			flagsData["C-2"] = 0;
+			flagsData["Z-2"] = 0;
+			flagsData["S-2"] = 0;
+			flagsData["E-2"] = 0; 
 			//labels = {};
 
 			for(register in registers)
 				registers[register].value = 0;
 
 			codeEditor.reset();
+
+			core.drawRegisters();
+			codeDump.innerHTML += "Program reset... done!" + "\n";
 		};
 	};
 
 	_compiler.getCore = function(){return core;};
 	var core = new Core();	
 	core.refresh();
+
+	(function loop(){
+		if(input.isDown('5')){
+			if(!stepPress){
+				stepPress = true;
+				core.step();
+			}
+		}
+		else
+			stepPress = false;
+
+		if(input.isDown('6')){
+			if(!runPress){
+				runPress = true;
+				core.run();
+			}
+		}
+		else
+			runPress = false;
+
+		if(input.isDown('R')){
+			if(!resetPress){
+				resetPress = true;
+				core.reset();
+			}
+		}
+		else
+			resetPress = false;
+
+		if(input.isDown('E')){
+			if(!executePress){
+				executePress = true;
+				core.loadProgram();
+			}
+		}
+		else
+			executePress = false;
+
+		requestAnimationFrame(loop);
+	})();
 };

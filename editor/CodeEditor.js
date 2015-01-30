@@ -48,8 +48,8 @@ var CodeEditor = function () {
 
 
 		self.preprocess = function(code){
-			 var lines = code.split("\n");
-			 var resultCode = "";
+			 //var lines = code.split("\n");
+			 //var resultCode = "";
 			 /*var resultCode = "";
 			 editStrings.length = 0;
 			 warnings.length = 0;
@@ -66,7 +66,7 @@ var CodeEditor = function () {
 
 			return resultCode;*/
 
-			for(var i = 0; i < lines.length; i++){ 
+			/*for(var i = 0; i < lines.length; i++){ 
 				var commentBegin = lines[i].indexOf('//');	
 				if(commentBegin > -1) 
 					lines[i] = lines[i].substring(0, commentBegin).trim();
@@ -75,9 +75,9 @@ var CodeEditor = function () {
 					resultCode += lines[i] + '\n';
 				else
 					resultCode += lines[i];
-			}
+			}*/
 
-			return resultCode;
+			return code;
 		};
 
 		var isReadOnly = function(num){
