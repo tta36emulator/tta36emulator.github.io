@@ -1523,11 +1523,11 @@ var Compiler = function(){
 				for(var i = 0; i < 64 - endCounter; i++)
 				{
 					if(i === 0)
-						endString = "_00000000_" + endString;
+						endString = "_0_" + endString;
 					else if(i === 63 - endCounter)
-						endString = "00000000" + endString;
+						endString = "0" + endString;
 					else
-						endString = "_00000000" + endString;
+						endString = "_0" + endString;
 				}
 
 				if(strID < 0x10)
