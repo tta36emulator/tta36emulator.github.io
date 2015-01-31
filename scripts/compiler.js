@@ -362,7 +362,8 @@ var Compiler = function(){
 			runPress		= false,
 			resetPress 		= false,
 			executePress 	= false,
-			commandCounter  =0;
+			commandCounter  = 0,
+			srcString 		= "";
 
 
 		// slots src and dst ----------------------------
@@ -586,6 +587,7 @@ var Compiler = function(){
 					else if(command.indexOf('END') > -1)
 					{
 						codeDump.innerHTML += "Program end!" + "\n";
+						codeDump.innerHTML += commandCounter + " commands compiled..." + "\n";
 					}
 					else
 					{
@@ -853,7 +855,7 @@ var Compiler = function(){
 			hexBundle.innerHTML = toHex2(sr2 + sr1 + sr0).result;
 
 			//codeEditor.appendTo('\t\t\t\t\t//' + hexBundle.innerHTML);
-			codeDump.innerHTML += commandCounter + ") " + hexBundle.innerHTML + "\n";
+			codeDump.innerHTML += commandCounter + ") " + hexBundle.innerHTML + "     [ " + srcString + " ]\n";
 
 
 			var bstr = bin.substring(4,36);
@@ -907,6 +909,14 @@ var Compiler = function(){
 				var command = parseCommand(commands[i]);
 				if(command !== -1)
 					parsedCommands.push(command);
+			}
+
+			if(parsedCommands.length > 0)
+			{
+				srcString = bundle.trim();
+				var c = srcString.indexOf(';');
+				if(c > -1)
+					srcString = srcString.substring(0, c).trim();
 			}
 
 			//############-Create slots-#################################
