@@ -9,6 +9,7 @@
 	</head>
 	<body>
 
+	<div id = "container">
 		<table id = 'lblTable' class = 'ctable'>
 			<tr>
 				<td class = 'regCol'> Label </td>
@@ -45,6 +46,7 @@
 				<td class = 'regCol'> Value </td>
 			</tr>
 		</table>
+	</div>
 
 		<canvas tabindex='1' id="lay1" width="350" height="200" class="levelCanvas"></canvas>
 		<canvas tabindex='3' id="lay3" width="350" height="200"></canvas>
@@ -95,10 +97,10 @@
 			<div id="codePane"><textarea id="code"></textarea></div>
 			<div id="dumpPane"><textarea id="codeDump"></textarea></div>
 			<div id="buttonPane">
-			 	<input id = "btnLoadProgram" class = "cbutton" type = "button" value = "Execute[E]" onclick = "compiler.getCore().loadProgram()">
-			 	<input id = "btnStep"  class = "cbutton" type = "button" value = "Step[5]" onclick = "compiler.getCore().step()">
-			 	<input id = "btnRun"   class = "cbutton" type = "button" value = "Run[6]" onclick = "compiler.getCore().run()">
-			 	<input id = "btnReset" class = "cbutton" type = "button" value = "Reset[R]" onclick = "compiler.getCore().reset()">
+			 	<input id = "btnLoadProgram" class = "cbutton" type = "button" value = "Execute[^E]" onclick = "compiler.getCore().loadProgram()">
+			 	<input id = "btnStep"  class = "cbutton" type = "button" value = "Step[^5]" onclick = "compiler.getCore().step()">
+			 	<input id = "btnRun"   class = "cbutton" type = "button" value = "Run[^6]" onclick = "compiler.getCore().run()">
+			 	<input id = "btnReset" class = "cbutton" type = "button" value = "Reset[^R]" onclick = "compiler.getCore().reset()">
 			</div>
    	    </div>	   
 

@@ -7,17 +7,34 @@
 			var code = event.keyCode, key;
 			switch(code) {
 				case 53:
-					key = '5'; break;
+					if(event.ctrlKey)
+					{				
+						key = '5'; 
+						
+						break;
+					}
 				case 54:
-					key = '6'; break;	
+					if(event.ctrlKey){
+						key = '6'; 
+
+						break;	
+					}
 				case 82:
-					key = 'R'; break;
+					if(event.ctrlKey){
+
+						break;
+					}
 				case 69:
-					key = 'E'; break;
+					if(event.ctrlKey){
+						key = 'E'; 
+		
+						break;
+					}
 				default:
 					key = String.fromCharCode(code);
 					//alert(code);
 			}
+
 
 			pressedKeys[key] = status;
 		}
@@ -58,7 +75,7 @@
 				return mouse[button];
 			}
 		};
-	})();
+	});
 //#############################-INPUT-#############################################
 
 
@@ -1614,43 +1631,29 @@ var Compiler = function(){
 	var core = new Core();	
 	core.refresh();
 
-	(function loop(){
-		if(input.isDown('5')){
-			if(!stepPress){
-				stepPress = true;
-				core.step();
-			}
+	var checkKeys = function(event){
+		if(event.ctrlKey && event.keyCode === 53){
+			core.step();
+			return false;
 		}
-		else
-			stepPress = false;
 
-		if(input.isDown('6')){
-			if(!runPress){
-				runPress = true;
-				core.run();
-			}
+		if(event.ctrlKey && event.keyCode === 54){
+			core.run();
+			return false;
 		}
-		else
-			runPress = false;
 
-		if(input.isDown('R')){
-			if(!resetPress){
-				resetPress = true;
-				core.reset();
-			}
+		if(event.ctrlKey && event.keyCode === 82){
+			core.reset();
+			return false;
 		}
-		else
-			resetPress = false;
 
-		if(input.isDown('E')){
-			if(!executePress){
-				executePress = true;
-				core.loadProgram();
-			}
+		if(event.ctrlKey && event.keyCode === 69){
+			core.loadProgram();
+			return false;
 		}
-		else
-			executePress = false;
+	};
 
-		requestAnimationFrame(loop);
-	})();
+
+	var ctr = document.getElementById("container");
+	document.onkeydown = checkKeys;
 };
