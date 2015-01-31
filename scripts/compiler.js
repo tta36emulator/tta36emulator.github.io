@@ -361,7 +361,8 @@ var Compiler = function(){
 			stepPress 		= false,
 			runPress		= false,
 			resetPress 		= false,
-			executePress 	= false;
+			executePress 	= false,
+			commandCounter  =0;
 
 
 		// slots src and dst ----------------------------
@@ -726,8 +727,6 @@ var Compiler = function(){
 			if(slots[0].isNull && slots[1].isNull && slots[2].isNull)
 				return;
 
-			PC++;
-
 			if(slots[0] !== null)
 			{
 				var s0HTML = null,
@@ -854,7 +853,8 @@ var Compiler = function(){
 			hexBundle.innerHTML = toHex2(sr2 + sr1 + sr0).result;
 
 			//codeEditor.appendTo('\t\t\t\t\t//' + hexBundle.innerHTML);
-			codeDump.innerHTML += hexBundle.innerHTML + "\n";
+			codeDump.innerHTML += commandCounter + ") " + hexBundle.innerHTML + "\n";
+
 
 			var bstr = bin.substring(4,36);
 			var send = bin.substring(0, 4);
@@ -874,7 +874,10 @@ var Compiler = function(){
 			wordCounter++;
 			endCounter++;
 
-			if(endCounter > 64)
+			PC++;
+			commandCounter++;
+
+			if(endCounter > 63)
 			{
 				endDump.push(".INITP_0" + strEndID + "(256'h" + endString + "),");
 				endString  = "";
@@ -1600,6 +1603,8 @@ var Compiler = function(){
 			wordCounter 	= 0;
 			binaryDump		= [];
 			strID 			= 0;
+			strEndID 		= 0;
+			commandCounter  = 0;
 
 			endDump = [];
 			endString = '';
