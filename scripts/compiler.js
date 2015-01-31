@@ -706,7 +706,7 @@ var Compiler = function(){
 
 		var drawSlots = function(slots){
 
-			if(slots[0].dst === "NULL" && slots[1].dst === "NULL" && slots[2].dst === "NULL")
+			if(slots[0].isNull && slots[1].isNull && slots[2].isNull)
 				return;
 
 			PC++;
@@ -1000,14 +1000,10 @@ var Compiler = function(){
 					}
 
 				if(slots[0] === null)
-					slots[0] = {src:'R0', dst:'NULL'};	
-				else if(slots[0].const10 === undefined && slots[0].const16 === undefined){
-					if(slots[0].src === undefined && slots[0].dst === undefined)
-						slots[0] = {src:'R0', dst:'NULL'};	
-				}
+					slots[0] = {src:'R0', dst:'NULL', isNull:true};	
 
 				if(slots[1] === null)
-					slots[1] = {src:'R0', dst:'NULL', cdtn:'', sf:false};	
+					slots[1] = {src:'R0', dst:'NULL', cdtn:'', sf:false, isNull:true};	
 				else if(slots[1].src === undefined && slots[1].dst === undefined){
 					if(slots[1].cdtn === undefined)
 						slots[1] = {src:'R0', dst:'NULL', cdtn:'', sf:false};	
@@ -1016,7 +1012,7 @@ var Compiler = function(){
 				}
 				
 				if(slots[2] === null)
-					slots[2] = {src:'R0', dst:'NULL',cdtn:'', sf:false};	
+					slots[2] = {src:'R0', dst:'NULL',cdtn:'', sf:false, isNull:true};	
 				else if(slots[2].src === undefined && slots[2].dst === undefined){
 					if(slots[2].cdtn === undefined)
 						slots[2] = {src:'R0', dst:'NULL', cdtn:'', sf:false};	
@@ -1267,6 +1263,10 @@ var Compiler = function(){
 		};
 
 		var runSlots = function(slots){
+
+			if(slots[0].isNull && slots[1].isNull && slots[2].isNull)
+				return;
+
 			var slot0 = slots[0],
 				slot1 = slots[1],
 				slot2 = slots[2],
