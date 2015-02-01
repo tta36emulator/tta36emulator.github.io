@@ -574,7 +574,7 @@ var Compiler = function(){
 
 						offset = str;
 						PC = offset;
-						codeDump.innerHTML += "SET PC = 0x" + toHex2(toBin(offset)).result + "\n";
+						codeDump.value += "SET PC = 0x" + toHex2(toBin(offset)).result + "\n";
 					}
 					else if(command.indexOf('.SET') > -1)
 					{
@@ -586,8 +586,8 @@ var Compiler = function(){
 					}
 					else if(command.indexOf('END') > -1)
 					{
-						codeDump.innerHTML += "Program end!" + "\n";
-						codeDump.innerHTML += commandCounter + " commands compiled..." + "\n";
+						codeDump.value += "Program end!" + "\n";
+						codeDump.value += commandCounter + " commands compiled..." + "\n";
 					}
 					else
 					{
@@ -855,7 +855,7 @@ var Compiler = function(){
 			hexBundle.innerHTML = toHex2(sr2 + sr1 + sr0).result;
 
 			//codeEditor.appendTo('\t\t\t\t\t//' + hexBundle.innerHTML);
-			codeDump.innerHTML += commandCounter + ") " + hexBundle.innerHTML + "     [ " + srcString + " ]\n";
+			codeDump.value += commandCounter + ") " + hexBundle.innerHTML + "     [ " + srcString + " ]\n";
 
 
 			var bstr = bin.substring(4,36);
@@ -1519,7 +1519,7 @@ var Compiler = function(){
 			_core.run();
 			_core.reset();
 			core.drawRegisters();
-			codeDump.innerHTML += "Program executed... done!" + "\n";
+			codeDump.value += "Program executed... done!" + "\n";
 		};
 
 		_core.refresh = function(){
@@ -1565,10 +1565,10 @@ var Compiler = function(){
 			}
 
 			for(var i = 0; i < binaryDump.length; i++)
-				codeDump.innerHTML += binaryDump[i] + "\n";
+				codeDump.value += binaryDump[i] + "\n";
 
 			for(var i = 0; i < endDump.length; i++)
-				codeDump.innerHTML += endDump[i] + "\n";
+				codeDump.value += endDump[i] + "\n";
 		};
 
 		_core.step = function(){
@@ -1607,8 +1607,8 @@ var Compiler = function(){
 
 			binBundle.innerHTML = '000000000000000000000000000000000000';
 			hexBundle.innerHTML = '0x00000000';
-			codeDump.innerHTML = '';
 			//codeDump.value = '';
+			codeDump.value = '';
 
 			dumpString 		= "";
 			wordCounter 	= 0;
@@ -1639,7 +1639,7 @@ var Compiler = function(){
 			codeEditor.reset();
 
 			core.drawRegisters();
-			codeDump.innerHTML += "Program reset... done!" + "\n";
+			codeDump.value += "Program reset... done!" + "\n";
 		};
 	};
 
