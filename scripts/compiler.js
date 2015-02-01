@@ -1560,7 +1560,7 @@ var Compiler = function(){
 						endString = "_0" + endString;
 				}
 
-				if(strID < 0x10)
+				if(strEndID < 0x10)
 					endDump.push(".INITP_0" + toHex2(toBin(strEndID)).result + "(256'h" + endString + "),");
 			}
 
