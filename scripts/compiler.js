@@ -1608,6 +1608,7 @@ var Compiler = function(){
 			binBundle.innerHTML = '000000000000000000000000000000000000';
 			hexBundle.innerHTML = '0x00000000';
 			codeDump.innerHTML = '';
+			codeDump.value = '';
 
 			dumpString 		= "";
 			wordCounter 	= 0;
