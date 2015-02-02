@@ -731,84 +731,87 @@ var Compiler = function(){
 			return bits;
 		}
 
-		var drawSlots = function(slots){
+		var drawSlots = function(slots,drawRegisters){
 
 			if(slots[0].isNull && slots[1].isNull && slots[2].isNull)
 				return;
 
-			if(slots[0] !== null)
+			if(drawRegisters)
 			{
-				var s0HTML = null,
-					cnst   = null;
-
-				if(slots[0].const16 !== undefined){
-					s0HTML = "c16"; 
-					cnst = slots[0].const16;
-				}
-				else 
+				if(slots[0] !== null)
 				{
-					s0HTML = "c10";
-					cnst = slots[0].const10;
-				}
+					var s0HTML = null,
+						cnst   = null;
 
-				if(cnst != undefined && cnst !== null){
-					SlotsTable.values.slot0src.innerHTML = cnst.substring(5,10);
-					SlotsTable.values.slot0dst.innerHTML = cnst.substring(0,5);
-					SlotsTable.exp.slot0src.innerHTML = s0HTML + "5bit(l)";
-					SlotsTable.exp.slot0dst.innerHTML = s0HTML + "5bit(h)";
-				}
-				else{
-					SlotsTable.values.slot0src.innerHTML = getSRC_ADDR(0, slots[0].src);
-					SlotsTable.values.slot0dst.innerHTML = getDST_ADDR(0, slots[0].dst);
-					SlotsTable.exp.slot0src.innerHTML = slots[0].src;
-					SlotsTable.exp.slot0dst.innerHTML = slots[0].dst;
-				}
-			}
-
-			if(slots[1] != null)
-			{
-				SlotsTable.values.slot1src.innerHTML = getSRC_ADDR(1, slots[1].src);
-				SlotsTable.values.slot1dst.innerHTML = getDST_ADDR(1, slots[1].dst);
-				SlotsTable.exp.slot1src.innerHTML = slots[1].src;
-				SlotsTable.exp.slot1dst.innerHTML = slots[1].dst;
-				SlotsTable.values.slot1cdtn.innerHTML = getFlagBits(slots[1].cdtn);
-
-				if(slots[0].const16 === undefined){
-					if(slots[1].sf)
-						SlotsTable.exp.slot1cdtn.innerHTML = 'SF';
-					else
+					if(slots[0].const16 !== undefined){
+						s0HTML = "c16"; 
+						cnst = slots[0].const16;
+					}
+					else 
 					{
-						if(slots[1].cdtn === '')
-					  		SlotsTable.exp.slot1cdtn.innerHTML = '-';
-						else
-					  		SlotsTable.exp.slot1cdtn.innerHTML = slots[1].cdtn;
+						s0HTML = "c10";
+						cnst = slots[0].const10;
+					}
+
+					if(cnst != undefined && cnst !== null){
+						SlotsTable.values.slot0src.innerHTML = cnst.substring(5,10);
+						SlotsTable.values.slot0dst.innerHTML = cnst.substring(0,5);
+						SlotsTable.exp.slot0src.innerHTML = s0HTML + "5bit(l)";
+						SlotsTable.exp.slot0dst.innerHTML = s0HTML + "5bit(h)";
+					}
+					else{
+						SlotsTable.values.slot0src.innerHTML = getSRC_ADDR(0, slots[0].src);
+						SlotsTable.values.slot0dst.innerHTML = getDST_ADDR(0, slots[0].dst);
+						SlotsTable.exp.slot0src.innerHTML = slots[0].src;
+						SlotsTable.exp.slot0dst.innerHTML = slots[0].dst;
 					}
 				}
-				else
-					SlotsTable.exp.slot1cdtn.innerHTML = 'C16 3bit';
-			}
 
-			if(slots[2] != null)
-			{
-				SlotsTable.values.slot2src.innerHTML = getSRC_ADDR(2, slots[2].src);
-				SlotsTable.values.slot2dst.innerHTML = getDST_ADDR(2, slots[2].dst);
-				SlotsTable.exp.slot2src.innerHTML = slots[2].src;
-				SlotsTable.exp.slot2dst.innerHTML = slots[2].dst;
-				SlotsTable.values.slot2cdtn.innerHTML = getFlagBits(slots[2].cdtn);
+				if(slots[1] != null)
+				{
+					SlotsTable.values.slot1src.innerHTML = getSRC_ADDR(1, slots[1].src);
+					SlotsTable.values.slot1dst.innerHTML = getDST_ADDR(1, slots[1].dst);
+					SlotsTable.exp.slot1src.innerHTML = slots[1].src;
+					SlotsTable.exp.slot1dst.innerHTML = slots[1].dst;
+					SlotsTable.values.slot1cdtn.innerHTML = getFlagBits(slots[1].cdtn);
 
-				if(slots[0].const16 === undefined){
-					if(slots[2].sf)
-						SlotsTable.exp.slot2cdtn.innerHTML = 'SF';
-					else
-					{
-						if(slots[2].cdtn === '')
-					  		SlotsTable.exp.slot2cdtn.innerHTML = '-';
+					if(slots[0].const16 === undefined){
+						if(slots[1].sf)
+							SlotsTable.exp.slot1cdtn.innerHTML = 'SF';
 						else
-					  		SlotsTable.exp.slot2cdtn.innerHTML = slots[2].cdtn;
+						{
+							if(slots[1].cdtn === '')
+						  		SlotsTable.exp.slot1cdtn.innerHTML = '-';
+							else
+						  		SlotsTable.exp.slot1cdtn.innerHTML = slots[1].cdtn;
+						}
 					}
+					else
+						SlotsTable.exp.slot1cdtn.innerHTML = 'C16 3bit';
 				}
-				else
-					SlotsTable.exp.slot2cdtn.innerHTML = 'C16 3bit';
+
+				if(slots[2] != null)
+				{
+					SlotsTable.values.slot2src.innerHTML = getSRC_ADDR(2, slots[2].src);
+					SlotsTable.values.slot2dst.innerHTML = getDST_ADDR(2, slots[2].dst);
+					SlotsTable.exp.slot2src.innerHTML = slots[2].src;
+					SlotsTable.exp.slot2dst.innerHTML = slots[2].dst;
+					SlotsTable.values.slot2cdtn.innerHTML = getFlagBits(slots[2].cdtn);
+
+					if(slots[0].const16 === undefined){
+						if(slots[2].sf)
+							SlotsTable.exp.slot2cdtn.innerHTML = 'SF';
+						else
+						{
+							if(slots[2].cdtn === '')
+						  		SlotsTable.exp.slot2cdtn.innerHTML = '-';
+							else
+						  		SlotsTable.exp.slot2cdtn.innerHTML = slots[2].cdtn;
+						}
+					}
+					else
+						SlotsTable.exp.slot2cdtn.innerHTML = 'C16 3bit';
+				}
 			}
 
 			var ss0 = 0;
@@ -860,51 +863,50 @@ var Compiler = function(){
 
 			binBundle.innerHTML = bin;
 			hexBundle.innerHTML = toHex2(sr2 + sr1 + sr0).result;
+	
+			//#########################################CREATE DUMP######################################################
+				codeDump.value += commandCounter + ") " + hexBundle.innerHTML + "     [ " + srcString + " ]\n";
 
-			//codeEditor.appendTo('\t\t\t\t\t//' + hexBundle.innerHTML);
-			codeDump.value += commandCounter + ") " + hexBundle.innerHTML + "     [ " + srcString + " ]\n";
+				var bstr = bin.substring(4,36);
+				var send = bin.substring(0, 4);
 
+				var sstr = toHex2(bstr).result;
+				var estr = toHex2(send).result;
 
-			var bstr = bin.substring(4,36);
-			var send = bin.substring(0, 4);
+				if(wordCounter !== 0)
+					sstr = sstr + "_";
 
-			var sstr = toHex2(bstr).result;
-			var estr = toHex2(send).result;
+				if(endCounter !== 0)
+					estr = estr + "_";
 
-			if(wordCounter !== 0)
-				sstr = sstr + "_";
+				dumpString = sstr + dumpString;
+				endString  = estr + endString;
 
-			if(endCounter !== 0)
-				estr = estr + "_";
+				wordCounter++;
+				endCounter++;
+				PC++;
+				commandCounter++;
 
-			dumpString = sstr + dumpString;
-			endString  = estr + endString;
+				if(endCounter > 63)
+				{
+					endDump.push(".INITP_0" + strEndID + "(256'h" + endString + "),");
+					endString  = "";
+					endCounter = 0;
+					strEndID++;
+				}
 
-			wordCounter++;
-			endCounter++;
+				if(wordCounter > 7)
+				{
+					if(strID < 0x10)
+						binaryDump.push(".INIT_0" + toHex2(toBin(strID)).result + "(256'h" + dumpString + "),");
+					else
+						binaryDump.push(".INIT_" + toHex2(toBin(strID)).result + "(256'h" + dumpString + "),");
 
-			PC++;
-			commandCounter++;
-
-			if(endCounter > 63)
-			{
-				endDump.push(".INITP_0" + strEndID + "(256'h" + endString + "),");
-				endString  = "";
-				endCounter = 0;
-				strEndID++;
-			}
-
-			if(wordCounter > 7)
-			{
-				if(strID < 0x10)
-					binaryDump.push(".INIT_0" + toHex2(toBin(strID)).result + "(256'h" + dumpString + "),");
-				else
-					binaryDump.push(".INIT_" + toHex2(toBin(strID)).result + "(256'h" + dumpString + "),");
-
-				dumpString  = "";
-				wordCounter = 0;
-				strID++;
-			}
+					dumpString  = "";
+					wordCounter = 0;
+					strID++;
+				}
+			//#########################################CREATE DUMP######################################################
 		};
 
 		var getBundleSlots = function(bundle){
@@ -1534,57 +1536,64 @@ var Compiler = function(){
 		};
 
 		_core.run = function(){
-			for(var i = 0; i < codeEditor.getLinesCount(); i++)
-				_core.step();
 
-			if(wordCounter > 0)
-			{
-				for(var i = 0; i < 8 - wordCounter; i++)
+			console.time("run-step");
+				for(var i = 0; i < codeEditor.getLinesCount(); i++)
+					_core.step(false);
+
+				if(wordCounter > 0)
 				{
-					if(i === 0)
-						dumpString = "_00000000_" + dumpString;
-					else if(i === 7 - wordCounter)
-						dumpString = "00000000" + dumpString;
+					for(var i = 0; i < 8 - wordCounter; i++)
+					{
+						if(i === 0)
+							dumpString = "_00000000_" + dumpString;
+						else if(i === 7 - wordCounter)
+							dumpString = "00000000" + dumpString;
+						else
+							dumpString = "_00000000" + dumpString;
+					}
+
+					if(strID < 0x10)
+						binaryDump.push(".INIT_0" + toHex2(toBin(strID)).result + "(256'h" + dumpString + "),");
 					else
-						dumpString = "_00000000" + dumpString;
+						binaryDump.push(".INIT_" + toHex2(toBin(strID)).result + "(256'h" + dumpString + "),");
 				}
 
-				if(strID < 0x10)
-					binaryDump.push(".INIT_0" + toHex2(toBin(strID)).result + "(256'h" + dumpString + "),");
-				else
-					binaryDump.push(".INIT_" + toHex2(toBin(strID)).result + "(256'h" + dumpString + "),");
-			}
-
-			if(endCounter > 0)
-			{
-				for(var i = 0; i < 64 - endCounter; i++)
+				if(endCounter > 0)
 				{
-					if(i === 0)
-						endString = "_0_" + endString;
-					else if(i === 63 - endCounter)
-						endString = "0" + endString;
-					else
-						endString = "_0" + endString;
+					for(var i = 0; i < 64 - endCounter; i++)
+					{
+						if(i === 0)
+							endString = "_0_" + endString;
+						else if(i === 63 - endCounter)
+							endString = "0" + endString;
+						else
+							endString = "_0" + endString;
+					}
+
+					if(strEndID < 0x10)
+						endDump.push(".INITP_0" + toHex2(toBin(strEndID)).result + "(256'h" + endString + "),");
 				}
 
-				if(strEndID < 0x10)
-					endDump.push(".INITP_0" + toHex2(toBin(strEndID)).result + "(256'h" + endString + "),");
-			}
+				for(var i = 0; i < binaryDump.length; i++)
+					codeDump.value += binaryDump[i] + "\n";
 
-			for(var i = 0; i < binaryDump.length; i++)
-				codeDump.value += binaryDump[i] + "\n";
+				for(var i = 0; i < endDump.length; i++)
+					codeDump.value += endDump[i] + "\n";
 
-			for(var i = 0; i < endDump.length; i++)
-				codeDump.value += endDump[i] + "\n";
+			console.timeEnd("run-step");
 		};
 
-		_core.step = function(){
-			errorCanvas.clearColor('#cfc');
-			var s = codeEditor.step();
+		_core.step = function(drawRegisters){
+			var s = codeEditor.step(drawRegisters);
 			var slots = getBundleSlots(s);
-			runSlots(slots)
-			drawSlots(slots);
-			_core.refresh();
+			//runSlots(slots)
+			drawSlots(slots, drawRegisters);
+			if(drawRegisters)
+			{
+				errorCanvas.clearColor('#cfc');
+				_core.refresh();
+			}
 		};
 
 		_core.reset = function(){
@@ -1656,7 +1665,7 @@ var Compiler = function(){
 
 	var checkKeys = function(event){
 		if(event.ctrlKey && event.keyCode === 53){
-			core.step();
+			core.step(true);
 			return false;
 		}
 

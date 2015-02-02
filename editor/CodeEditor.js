@@ -195,18 +195,23 @@ var CodeEditor = function () {
 
 		self.getLinesCount = function(){return lines};
 
-		self.step = function(){
+		self.step = function(updateLine){
 			var s = lineArray[currentLineNum];
 
-			editor.removeLineClass(currentLineNum, "wrap", "currentLine");
-			editor.addLineClass(currentLineNum, "wrap", "simpleLine");
+			if(updateLine){
+				editor.removeLineClass(currentLineNum, "wrap", "currentLine");
+				editor.addLineClass(currentLineNum, "wrap", "simpleLine");
+			}
+			
 			currentLineNum++;
 
-			if(currentLineNum < lines){
-				editor.removeLineClass(currentLineNum, "wrap", "simpleLine");
-				editor.removeLineClass(currentLineNum, "wrap", "errorLine");	
-				editor.addLineClass(currentLineNum, "wrap", "currentLine");	
-			}		
+			if(updateLine){
+				if(currentLineNum < lines){
+					editor.removeLineClass(currentLineNum, "wrap", "simpleLine");
+					editor.removeLineClass(currentLineNum, "wrap", "errorLine");	
+					editor.addLineClass(currentLineNum, "wrap", "currentLine");	
+				}	
+			}	
 			return s;
 		};
 
