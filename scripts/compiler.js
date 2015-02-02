@@ -492,6 +492,12 @@ var Compiler = function(){
 			if(getSRC_ADDR(2,s) > -1 && getDST_ADDR(2,d) > -1)
 				_slots.push(2);
 
+			if(getSRC_ADDR(0,s) === -1 && getSRC_ADDR(1,s) === -1 && getSRC_ADDR(2,s) === -1)
+				errorCanvas.drawError('Console 12pt', 'ERROR: SRC ' + s + ' not found...', 5, 30, '#000');
+
+			if(getDST_ADDR(0,d) === -1 && getDST_ADDR(1,d) === -1 && getDST_ADDR(2,d) === -1)
+				errorCanvas.drawError('Console 12pt', 'ERROR: DST ' + d +' not found...', 5, 50, '#000');
+
 			return _slots;
 		};
 
