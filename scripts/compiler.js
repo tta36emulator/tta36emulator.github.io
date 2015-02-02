@@ -99,6 +99,7 @@ var Compiler = function(){
 				context.font       = font;
 				context.fillStyle  = color;
 				context.fillText(text, x, y);
+				codeDump.value += text + "\n";
 			};
 		
 			_xcanvas.clearColor = function(color){
