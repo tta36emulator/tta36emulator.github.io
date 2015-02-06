@@ -9,25 +9,21 @@
 				case 53:
 					if(event.ctrlKey)
 					{				
-						key = '5'; 
-						
+						key = '5'; 		
 						break;
 					}
 				case 54:
 					if(event.ctrlKey){
 						key = '6'; 
-
 						break;	
 					}
 				case 82:
 					if(event.ctrlKey){
-
 						break;
 					}
 				case 69:
 					if(event.ctrlKey){
 						key = 'E'; 
-		
 						break;
 					}
 				default:
@@ -729,7 +725,57 @@ var Compiler = function(){
 			}
 
 			return bits;
-		}
+		};
+
+		var checkFlags = function(value){
+			var status = toBin(parseInt(registers["STATE"].value));
+			if(status.length == 2)
+				status = '0' + status;
+
+			var c = status[2],
+				z = status[1],
+				s = status[0],
+				result = false;
+
+			switch(value)
+			{
+				case '': 
+					result = true;
+					break;
+				case 'NZ?':   //NZ
+					if(z === '1')
+						result = true;
+					break;
+				case 'Z?': 
+					if(z === '0')
+						result = true;
+					break;
+				case 'C?': 
+					if(c === '1')
+						result = true;
+					break;
+				case 'NC?': 
+					if(c === '0')
+						result = true;
+					break;
+				case 'S?': 
+					if(s === '1')
+						result = true;
+					break;
+				case 'E?': 
+					result = false;
+					break;
+				case 'SF': 
+					result = true;
+					break;	
+				default:
+					result = false;
+					break;
+			}
+
+			return result;
+		};
+
 
 		var drawSlots = function(slots,drawRegisters){
 
@@ -959,9 +1005,10 @@ var Compiler = function(){
 							}
 
 							if(cmd.const10 && !const10E){
+								var _fullConst = cmd.const10_16;
 								var c = get16bitFromConst(cmd.const10_16);
 								const10A = cmd.const10_16;
-								slots[0] = {const10:c.substring(6,16)};
+								slots[0] = {const10:c.substring(6,16), fullconst:_fullConst};
 								const10E = true;
 							}
 
@@ -970,8 +1017,12 @@ var Compiler = function(){
 								cmd.const10_16 = cmd.const10_16 % 0x10000;
 								var c = get16bitFromConst(cmd.const10_16);
 								slots[0] = {const16:c.substring(6,16), fullconst:_fullConst};
-								slots[1] = {};
-								slots[2] = {};
+
+								if(slots[1] === null)
+									slots[1] = {};
+								if(slots[2] === null)
+									slots[2] = {};
+
 								slots[1].cdtn = c.substring(3,6);
 								slots[2].cdtn = c.substring(0,3);
 								const16E = true;
@@ -1208,44 +1259,35 @@ var Compiler = function(){
 			clearClassChildren(row);
 		};
 
-		var calculateFlags = function(value,slot){
+		var calculateFlagsSZ = function(value,slot){
 			(value > 0x8000) ? flagsData["S-"+slot] = 1 : flagsData["S-"+slot] = 0;
 			(value === 0)    ? flagsData["Z-"+slot] = 1 : flagsData["Z-"+slot] = 0;
 		};
 
-		var calculateFlags2 = function(value,slot){
-			(value > 0x8000) ? flagsData["S-"+slot] = 1 : flagsData["S-"+slot] = 0;
-			(value === 0)    ? flagsData["Z-"+slot] = 1 : flagsData["Z-"+slot] = 0;
+		var calculateFlagC = function(value,slot){
 			(value > 0xFFFF) ? flagsData["C-"+slot] = 1 : flagsData["C-"+slot] = 0;
 		};
 
 		var add  = function(){ 
-			var value = registers["ADD.A"].value  + registers["ADD.B"].value;
-			registers["ADD"].value = value % 0x10000;
-			return value;
+			registers["ADD"].value = registers["ADD.A"].value + registers["ADD.B"].value;
 		};
 
 		var sub  = function(){ 
-			registers["SUB"].value = registers["SUB.B"].value  - registers["SUB.A"].value;
-			return registers["SUB"].value;
+			registers["SUB"].value = registers["SUB.B"].value - registers["SUB.A"].value;
 		};
 
 		var addc = function(){
-			var value = registers["ADDC.A"].value  + registers["ADDC.B"].value + flags.C;
-			registers["ADDC"].value = value % 0x10000;
-			return value;
+			registers["ADDC"].value = registers["ADDC.A"].value  + registers["ADDC.B"].value + flags.C;
 		};
 
 		var xor  = function(){
 			registers["XOR"].value  = registers["XOR.B"].value  ^ registers["XOR.A"].value;
-			return registers["XOR"].value;
 		};
 
 		var shr  = function(){
 			var shr = registers["SH"].value >>> 1;
-			registers["SH"].value   = shr % 0x10000;
-			registers["SH.R"].value = shr % 0x10000;
-			return shr;
+			registers["SH"].value   = shr;
+			registers["SH.R"].value = shr;
 		};
 
 		var isFunction = function(src){
@@ -1301,226 +1343,73 @@ var Compiler = function(){
 			return result;
 		};
 
-		var runSlots = function(slots){
+		var executeSlot = function(slot,slotID, c16){
 
-			if(slots[0].isNull && slots[1].isNull && slots[2].isNull)
-				return;
+			var runSlot = function(){
+				changedRows.push(slot.dst);
+				registers[slot.src].value = registers[slot.src].value % 0x10000
+				registers[slot.dst].value = registers[slot.src].value;
+			};
+
+			var createSTATE = function(){
+				var s = toHex2(flagsData["S-"+slotID].toString() + flagsData["Z-"+slotID].toString() + flagsData["C-"+slotID].toString());
+				registers["STATE"].value = s.result;
+				changedRows.push("STATE");
+			};
+
+			if(isFunction(slot.src))
+			{
+				calculateFunction(slot.src);
+				if(slotID !== 0)
+					calculateFlagC(registers[slot.src].value,slotID);
+			}
+			
+			if(slotID !== 0)
+			{
+				calculateFlagsSZ(registers[slot.src].value,slotID);
+			
+				if(slot.sf)
+					createSTATE();
+
+				if(slot.cdtn && c16 === false)
+				{
+					if(checkFlags(slot.cdtn))
+					   runSlot();
+				}
+				else
+					runSlot();
+			}
+			else
+				runSlot();
+		};
+
+		var runSlots = function(slots){
 
 			var slot0 = slots[0],
 				slot1 = slots[1],
-				slot2 = slots[2],
-				s0 	  = slot0.src,
-				d0 	  = slot0.dst,
-				s1 	  = slot1.src,
-				d1 	  = slot1.dst,
-				s2 	  = slot2.src,
-				d2 	  = slot2.dst,
-				val0  = 0,
-				val1  = 0,
-				val2  = 0,
-				src0  = registers[s0],
-				src1  = registers[s1],
-				src2  = registers[s2];
+				slot2 = slots[2];
+
+			if(slot0.isNull && slot1.isNull && slot2.isNull) return;
 
 			if(slot0.const10 || slot0.const16)
 			{
-				if(slot0.const10){
-					registers["CONST10"].value = parseInt(slot0.const10, 2);
-					changedRows.push("CONST10");
-				}
-
-				if(slot0.const16){
-					var c16 = slot2.cdtn + slot1.cdtn + slot0.const16;
-					registers["CONST16"].value = parseInt(c16, 2);
-					changedRows.push("CONST16");
-				}
-
-				changedRows.push(d1);
-				changedRows.push(d2);
-
-				val1 = src1.value;
-				val2 = src2.value;
-
-				if(!isFunction(s1))
-					calculateFlags(val1, 1);
-				else
-				{
-					val1 = calculateFunction(s1);
-					calculateFlags2(val1,1);
-				}
-	
-				if(!isFunction(s2))
-					calculateFlags(val2, 2);
-				else
-				{
-					val2 = calculateFunction(s2);
-					calculateFlags2(val2,2);
-				}
-
-				registers[d1].value = val1;
-				registers[d2].value = val2;	
+				//#########################CONST-MODE###################################
+					if(slot0.const10){
+						registers["CONST10"].value = slot0.fullconst;
+						changedRows.push("CONST10");
+					}
+					else if(slot0.const16){
+						registers["CONST16"].value = slot0.fullconst;
+						changedRows.push("CONST16");
+					}
+				
+				//#########################CONST-MODE###################################
 			}
 			else
-			{
-				var a = [];
-				if(d0 != 'NULL')
-					a.push({id:0,reg:d0, src:s0});
-				if(d1 != 'NULL')
-					a.push({id:1,reg:d1, src:s1});
-				if(d2 != 'NULL')
-					a.push({id:2,reg:d2, src:s2});
+				executeSlot(slot0,0);
 
-				val0 = src0.value;
-				val1 = src1.value;
-				val2 = src2.value;
-
-				var executeSlot = function(id, isOR){
-					switch(id)
-					{
-						case 0:
-							if(isOR === undefined || isOR.length === 0)
-							{
-								if(isFunction(s0))
-									val0 = calculateFunction(s0);	
-								registers[d0].value = val0;
-							}
-							else
-							{
-								for(var i = 0; i < isOR.length; i++)
-									registers[d0].value |= registers[isOR[i]].value;
-							}
-							registers[d0].value = val1 % 0x10000;
-							changedRows.push(d0);
-							break;
-						case 1:
-							if(isOR === undefined || isOR.length === 0)
-							{
-								if(!isFunction(s1))
-									calculateFlags(src1.value, 1);
-								else
-								{
-									val1 = calculateFunction(s1);
-									calculateFlags2(val1,1);
-								}
-							}
-							else
-							{
-								for(var i = 0; i < isOR.length; i++)
-									registers[d1].value |= registers[isOR[i]].value;
-
-								calculateFlags(registers[d1].value, 1);
-							}
-							registers[d1].value = val1 % 0x10000;
-							changedRows.push(d1);
-							break;
-						case 2:
-							if(isOR === undefined || isOR.length === 0)
-							{
-								if(!isFunction(s2))
-									calculateFlags(src2.value, 2);
-								else
-								{
-									val2 = calculateFunction(s2);
-									calculateFlags2(val2,2);
-								}
-							}
-							else
-							{
-								for(var i = 0; i < isOR.length; i++)
-									registers[d2].value |= registers[isOR[i]].value;
-
-								calculateFlags(registers[d2].value, 2);
-							}
-							registers[d2].value = val2 % 0x10000;
-							changedRows.push(d2);
-							break;
-					}
-				};
-
-				if(a.length === 1)
-					executeSlot(a[0].id);
-				else if(a.length === 2)
-				{
-					if(a[0].reg !== a[1].reg){
-						executeSlot(a[0].id);
-						executeSlot(a[1].id);
-					}
-					else
-					{
-						var isOR = [];
-						isOR.push(a[0].src);
-						isOR.push(a[1].src);
-						executeSlot(a[0].id, isOR);
-						//alert(a[0].reg);
-					}
-				}
-				else if(a.length === 3)
-				{
-					if(a[0].reg !== a[1].reg && a[0].reg !== a[2].reg && a[1].reg !== a[2].reg){
-						executeSlot(a[0].id);
-						executeSlot(a[1].id);
-						executeSlot(a[2].id);
-					}
-					//else
-						//alert(a[0].reg);
-				}
-
-				/*if(d0 !== d1 && d1 !== d2 && d0 !== d2)	
-				{
-					if(!isFunction(s1))
-						calculateFlags(src1.value, 1);
-					else
-					{
-						val1 = calculateFunction(s1);
-						calculateFlags2(val1,1);
-					}
-
-					if(!isFunction(s2))
-						calculateFlags(src2.value, 2);
-					else
-					{
-						val2 = calculateFunction(s2);
-						calculateFlags2(val2,2);
-					}
-
-					registers[d0].value = registers[s0].value;
-					registers[d1].value = val1;
-					registers[d2].value = val2;
-
-					changedRows.push(d0);
-					changedRows.push(d1);
-					changedRows.push(d2);
-				}
-				else
-				{
-					if(d0 === d1 && d1 === d2 && d0 === d2)
-					{
-						registers[d0].value = registers[s0].value | registers[s1].value | registers[s2].value;
-						changedRows.push(d0);
-					}
-					else
-					{
-						if(d0 === d1){
-							registers[d0].value = registers[s0].value | registers[s1].value;
-							registers[d2].value = registers[s2].value;
-							changedRows.push(d0);
-							changedRows.push(d2);
-						}
-						else if(d1 === d2){
-							registers[d1].value = registers[s1].value | registers[s2].value;
-							registers[d0].value = registers[s0].value;
-							changedRows.push(d0);
-							changedRows.push(d1);
-						}
-						else if(d0 === d2){
-							registers[d1].value = registers[s1].value;
-							registers[d0].value = registers[s0].value | registers[s2].value;	
-							changedRows.push(d0);	
-							changedRows.push(d1);	
-						}
-					}
-				}*/
-			}
+				executeSlot(slot1,1,slot0.const16);
+				executeSlot(slot2,2,slot0.const16);
 		};
 
 		_core.loadProgram = function(){
@@ -1587,7 +1476,7 @@ var Compiler = function(){
 		_core.step = function(drawRegisters){
 			var s = codeEditor.step(drawRegisters);
 			var slots = getBundleSlots(s);
-			//runSlots(slots)
+			runSlots(slots)
 			drawSlots(slots, drawRegisters);
 			if(drawRegisters)
 			{
