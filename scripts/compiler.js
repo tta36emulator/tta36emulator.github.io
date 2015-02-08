@@ -1432,14 +1432,19 @@ var Compiler = function(){
 
 				if(wordCounter > 0)
 				{
-					for(var i = 0; i < 8 - wordCounter; i++)
+					if(8 - wordCounter === 1)
+						dumpString = "00000000_" + dumpString;
+					else
 					{
-						if(i === 0)
-							dumpString = "_00000000_" + dumpString;
-						else if(i === 7 - wordCounter)
-							dumpString = "00000000" + dumpString;
-						else
-							dumpString = "_00000000" + dumpString;
+						for(var i = 0; i < 8 - wordCounter; i++)
+						{
+							if(i === 0)
+								dumpString = "_00000000_" + dumpString;
+							else if(i === 7 - wordCounter)
+								dumpString = "00000000" + dumpString;
+							else
+								dumpString = "_00000000" + dumpString;
+						}
 					}
 
 					if(strID < 0x10)
@@ -1450,14 +1455,19 @@ var Compiler = function(){
 
 				if(endCounter > 0)
 				{
-					for(var i = 0; i < 64 - endCounter; i++)
+					if(64 - endCounter === 1)
+						dumpString = "0_" + dumpString;
+					else
 					{
-						if(i === 0)
-							endString = "_0_" + endString;
-						else if(i === 63 - endCounter)
-							endString = "0" + endString;
-						else
-							endString = "_0" + endString;
+						for(var i = 0; i < 64 - endCounter; i++)
+						{
+							if(i === 0)
+								endString = "_0_" + endString;
+							else if(i === 63 - endCounter)
+								endString = "0" + endString;
+							else
+								endString = "_0" + endString;
+						}
 					}
 
 					if(strEndID < 0x10)
