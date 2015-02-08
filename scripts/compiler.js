@@ -1456,7 +1456,7 @@ var Compiler = function(){
 				if(endCounter > 0)
 				{
 					if(64 - endCounter === 1)
-						endCounter = "0_" + endCounter;
+						endString = "0_" + endString;
 					else
 					{
 						for(var i = 0; i < 64 - endCounter; i++)
