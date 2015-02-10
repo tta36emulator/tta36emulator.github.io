@@ -613,8 +613,14 @@ var Compiler = function(){
 					else
 					{
 						var s = parseInt(_src);
-						if(isNaN(s))
+						if(isNaN(s)){
 							_src = consts[_src];
+
+							if(_src !== undefined && _src.indexOf('0x') > -1){
+								_src = _src.replace('0x','').trim();
+								_src = toDec(_src);
+							}
+						}
 						else
 							_src = s;
 					}
@@ -633,6 +639,7 @@ var Compiler = function(){
 				}
 
 				_priority = _slots.length;
+
 			//############-Find slot candidats-########################
 	
 			if(_sf)
@@ -979,7 +986,28 @@ var Compiler = function(){
 				var const16A = null,
 					const10A = null,
 					const16E = false,
-					const10E = false;
+					const10E = false,
+					isConst  = false;
+
+
+					for(var i = 0; i < parsedCommands.length; i++)
+					{
+						if(isConst)
+						{
+							for(var j = 0; j < parsedCommands[i].candidats.length; j++)
+							{
+								if(parsedCommands[i].candidats[j] === 0)
+								{
+									parsedCommands[i].candidats.splice(j,1);
+									parsedCommands[i].priority = parsedCommands[i].candidats.length;
+									j--;
+								}
+							}
+						}
+
+						if(parsedCommands[i].const10 || parsedCommands[i].const16)
+							isConst = true;
+					}
 
 					parsedCommands.sort(function(a,b){
 						if(a.priority < b.priority) return -1;
