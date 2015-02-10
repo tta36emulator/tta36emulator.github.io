@@ -992,21 +992,24 @@ var Compiler = function(){
 
 					for(var i = 0; i < parsedCommands.length; i++)
 					{
-						if(isConst)
-						{
+						if(parsedCommands[i].const10 || parsedCommands[i].const16)
+							isConst = true;
+					}
+
+					if(isConst)
+					{
+						for(var i = 0; i < parsedCommands.length; i++)
+						{				
 							for(var j = 0; j < parsedCommands[i].candidats.length; j++)
 							{
-								if(parsedCommands[i].candidats[j] === 0)
+								if(parsedCommands[i].candidats[j] === 0 && (!parsedCommands[i].const10 && !parsedCommands[i].const16))
 								{
 									parsedCommands[i].candidats.splice(j,1);
 									parsedCommands[i].priority = parsedCommands[i].candidats.length;
 									j--;
 								}
-							}
+							}		
 						}
-
-						if(parsedCommands[i].const10 || parsedCommands[i].const16)
-							isConst = true;
 					}
 
 					parsedCommands.sort(function(a,b){
