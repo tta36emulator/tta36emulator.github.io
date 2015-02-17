@@ -170,6 +170,8 @@ var Compiler = function(){
 	var xcanvas = new Xcanvas(bg_context, screen);
 	var errorCanvas = new Xcanvas(errorContext, screen);
 
+	var comment = "";
+
 	var dstTable  = document.getElementById('dstTable');
 	var srcTable  = document.getElementById('srcTable');
 	var flgTable  = document.getElementById('flgTable');
@@ -919,7 +921,14 @@ var Compiler = function(){
 	
 			//#########################################CREATE DUMP######################################################
 				var h = toHex(26624 + commandCounter);
-				codeDump.value +=  h + " " + hexBundle.innerHTML + " [ " + srcString + " ]\n";
+				var st = h + " " + hexBundle.innerHTML + " [ " + srcString + " ]";
+
+				for(var i = 65 - st.length; i > 0 ; i--){
+					st += " ";
+				}
+
+				codeDump.value +=  st + comment + "\n";
+				comment = "";
 
 				var bstr = bin.substring(4,36);
 				var send = bin.substring(0, 4);
@@ -964,6 +973,11 @@ var Compiler = function(){
 		};
 
 		var getBundleSlots = function(bundle){
+
+			var b = bundle.indexOf(";");
+			if(b !== -1)
+				comment = bundle.substring(b, bundle.length)
+
 			var commands = parseBundle(bundle);
 			var slots = [null,null,null];
 			var parsedCommands = [];
