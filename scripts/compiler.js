@@ -212,11 +212,24 @@ var Compiler = function(){
 		slot2:{src:0,dst:0},
 	};
 
+	var FRAMEBUFFER = [];
+	var CODESEGMENT = [];
+
 	xcanvas.clearCanvas('#ccf');
 	xcanvas.drawText('Console 12pt', 'SCREEN', 5, 10, '#000');
 	errorCanvas.clearCanvas('#cfc');
 
 	codeEditor.refresh();
+
+	var initFrameBufferMemory = function(){
+		for (var i = 0; i < 0x8000; i++)
+			FRAMEBUFFER[i] = 0x0000;
+	}();
+
+	var initCodeMemory = function(){
+		for (var i = 0x6800; i < 0xFFFF; i++)
+			CODESEGMENT[i] = {bin:0, hex:0, slots:[]};
+	}();
 
 		//fill hex nubmer zero
 	var zeroFill  = function(number, width )
@@ -788,8 +801,10 @@ var Compiler = function(){
 
 		var drawSlots = function(slots,drawRegisters){
 
-			if(slots[0].isNull && slots[1].isNull && slots[2].isNull)
+			if(slots[0].isNull && slots[1].isNull && slots[2].isNull){
+				codeDump.value +=  comment + "\n";
 				return;
+			}
 
 			if(drawRegisters)
 			{
@@ -918,6 +933,9 @@ var Compiler = function(){
 
 			binBundle.innerHTML = bin;
 			hexBundle.innerHTML = toHex2(sr2 + sr1 + sr0).result;
+			CODESEGMENT[26624 + commandCounter].hex   = hexBundle.innerHTML;
+			CODESEGMENT[26624 + commandCounter].bin   = bin;
+			CODESEGMENT[26624 + commandCounter].slots = slots;
 	
 			//#########################################CREATE DUMP######################################################
 				var h = toHex(26624 + commandCounter);
@@ -974,10 +992,16 @@ var Compiler = function(){
 
 		var getBundleSlots = function(bundle){
 
-			var b = bundle.indexOf(";");
-			if(b !== -1)
-				comment = bundle.substring(b, bundle.length)
+			bundle = bundle.trim();
 
+			if(bundle.indexOf('->') === -1 && bundle.indexOf('=>') === -1) 
+				comment = bundle;
+			else{
+				var b = bundle.indexOf(";");
+				if(b !== -1 && b !== 0)
+					comment = bundle.substring(b, bundle.length)
+			}
+	
 			var commands = parseBundle(bundle);
 			var slots = [null,null,null];
 			var parsedCommands = [];
