@@ -918,7 +918,8 @@ var Compiler = function(){
 			hexBundle.innerHTML = toHex2(sr2 + sr1 + sr0).result;
 	
 			//#########################################CREATE DUMP######################################################
-				codeDump.value += commandCounter + ") " + hexBundle.innerHTML + "     [ " + srcString + " ]\n";
+				var h = toHex(26624 + commandCounter);
+				codeDump.value +=  h + " " + hexBundle.innerHTML + " [ " + srcString + " ]\n";
 
 				var bstr = bin.substring(4,36);
 				var send = bin.substring(0, 4);
