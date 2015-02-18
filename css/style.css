@@ -55,22 +55,32 @@ tr, td {
 }
 
 .regCol{
-	font-size: 14px;
+	font-size: 11px;
 	font-weight: 700;
 	font-family: serif;
 }
 
 .dstStyle{
 	background-color: #afa;
+	font-size: 11px;
+	font-weight: 700;
+	font-family: serif;
+}
+
+.cbutton:hover{
+	background-color: #0f0;
 }
 
 .srcStyle{
 	background-color: #aaf;
+	font-size: 11px;
+	font-weight: 700;
+	font-family: serif;
 }
 
 .changedRowColor{
 	background-color: #aaa;
-	font-size: 14px;
+	font-size: 11px;
 	font-weight: 700;
 	font-family: serif;
 }
@@ -81,6 +91,10 @@ tr, td {
 
 .errorLine{
 	background-color: #f00;
+}
+
+.breakPointLine{
+	background-color: #b00;
 }
 
 .simpleLine{
@@ -138,22 +152,22 @@ tr, td {
 
 #cnsTable{
 	position:absolute;
-	margin-left:150px; 
+	margin-left:180px; 
 }
 
 #srcTable{
 	position:absolute;
-	left:330px; 
+	left:320px; 
 }
 
 #dstTable{
 	position:absolute;
-	margin-left:510px; 
+	margin-left:460px; 
 }
 
 #flgTable{
 	position:absolute;
-	margin-left:685px; 
+	margin-left:594px; 
 }
 
 #codeDump
@@ -187,9 +201,39 @@ tr, td {
 	display:block;
 	position:absolute;
 	top:0px;
-	left:780px;
+	left:655px;
 }
 
+#runCodePane {
+	display:block;
+	position:absolute;
+	top:415px;
+	left:1370px;
+	border: 1px solid black;
+	border-color: #ccc;
+}
+
+#rbtnStep, #rbtnRun, #rbtnReset, #rbtnAddBP {
+	position:absolute;
+	top:893px;
+	left:1400px;
+	z-index: 3;
+}
+
+#rbtnRun
+{
+	left:1467px;
+}
+
+#rbtnReset
+{
+	left:1531px;
+}
+
+#rbtnAddBP{
+	left:1606px;
+}
+	
 #codePane {
 	border:2px solid #ccc;
 }
@@ -204,11 +248,14 @@ tr, td {
 
 #lay1{
 	position: absolute;
-	left:1500px;
+	left:1370px;
+	top:5px;
+	border: 1px solid black;
+	border-color: #0f0;
 }
 
 #lay3{
 	position: absolute;
-	left:1500px;
+	left:1370px;
 	top:210px;
 }

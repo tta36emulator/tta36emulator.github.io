@@ -9,6 +9,12 @@
 	</head>
 	<body>
 
+	<div id = "runCodePane"><textarea id="runCode"></textarea></div>
+	<input id = "rbtnStep"  class = "cbutton" type = "button" value = "Step[^7]"  onclick = "compiler.getCore().runCommand()">
+	<input id = "rbtnRun"   class = "cbutton" type = "button" value = "Run[^8]"   onclick = "compiler.getCore().runCommands()">
+	<input id = "rbtnReset" class = "cbutton" type = "button" value = "Reset[^9]" onclick = "compiler.getCore().resetRunner()">
+	<input id = "rbtnAddBP" class = "cbutton" type = "button" value = "setBP[^b]" onclick = "compiler.getCore().setBreakPoint()">
+
 	<div id = "container">
 		<table id = 'lblTable' class = 'ctable'>
 			<tr>
@@ -48,8 +54,8 @@
 		</table>
 	</div>
 
-		<canvas tabindex='1' id="lay1" width="350" height="200" class="levelCanvas"></canvas>
-		<canvas tabindex='3' id="lay3" width="350" height="200"></canvas>
+		<canvas tabindex='1' id="lay1" width="450" height="200" class="levelCanvas"></canvas>
+		<canvas tabindex='3' id="lay3" width="450" height="200"></canvas>
 
 		<div id="editorPane">
 			<table id = 'ttaWord' class = 'ttaWord'>

@@ -1,4 +1,4 @@
-var CodeEditor = function () {
+var CodeEditor = function (id,w,h) {
 	var self = this;
 	var editStrings  = [];
 	var LIMIT = 80;
@@ -32,7 +32,7 @@ var CodeEditor = function () {
 
     var warnings = [];
 
-	var editor = CodeMirror.fromTextArea(document.getElementById('code'), {
+	var editor = CodeMirror.fromTextArea(document.getElementById(id), {
 					lineNumbers: true,
 					matchBrackets: true,
 					mode: 'javascript',
@@ -43,7 +43,7 @@ var CodeEditor = function () {
 					smartIndent: false,
 					disableSpellcheck: false
 				});   
-				editor.setSize(700, 603); 
+				editor.setSize(w, h); 
 
 
 
@@ -215,10 +215,22 @@ var CodeEditor = function () {
 			return s;
 		};
 
+		self.selectBreakPointLine = function(line){
+			editor.removeLineClass(line, "wrap", "simpleLine");
+			editor.removeLineClass(line, "wrap", "currentLine");
+			editor.addLineClass(line, "wrap", "breakPointLine");		
+		}
+
 		self.selectErrorLine = function(){
 			var line = currentLineNum - 1;
 			editor.removeLineClass(line, "wrap", "simpleLine");
 			editor.addLineClass(line, "wrap", "errorLine");		
+		}
+
+		self.selectLine = function(value){
+			editor.removeLineClass(value, "wrap", "simpleLine");
+			editor.removeLineClass(value, "wrap", "errorLine");	
+			editor.addLineClass(value, "wrap", "currentLine");
 		}
 
 		self.reset = function(){		
@@ -231,6 +243,16 @@ var CodeEditor = function () {
 			editor.addLineClass(currentLineNum, "wrap", "currentLine");
 
 			self.loadCode(self.getCode());	
+		};
+
+		self.getCurrentLineNum = function(){
+			return currentLineNum;
+		};
+
+		self.getCursorLine = function(){
+			var doc = editor.getDoc();
+			var cursor = doc.getCursor();
+			return cursor.line;
 		};
 
 		self.loadState = function(code,css){	

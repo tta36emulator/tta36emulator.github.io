@@ -159,18 +159,20 @@ var Compiler = function(){
 	//#############################-ENDXcanvas-########################################
 
 	_compiler = this;
-	var codeEditor  = new CodeEditor();
+	var codeEditor    = new CodeEditor('code',700,603);
+	var runCodeEditor = new CodeEditor('runCode',450,472);
 
-	var screen  = document.getElementById('lay1');
-	var bg_context = screen.getContext('2d');
+	var scr  = document.getElementById('lay1');
+	var bg_context = scr.getContext('2d');
 
 	var errorScreen   = document.getElementById('lay3');
 	var errorContext = errorScreen.getContext('2d');
 
-	var xcanvas = new Xcanvas(bg_context, screen);
-	var errorCanvas = new Xcanvas(errorContext, screen);
+	var xcanvas = new Xcanvas(bg_context, scr);
+	var errorCanvas = new Xcanvas(errorContext, scr);
 
 	var comment = "";
+	var currentString = "";
 
 	var dstTable  = document.getElementById('dstTable');
 	var srcTable  = document.getElementById('srcTable');
@@ -215,7 +217,7 @@ var Compiler = function(){
 	var FRAMEBUFFER = [];
 	var CODESEGMENT = [];
 
-	xcanvas.clearCanvas('#ccf');
+	xcanvas.clearCanvas('#000');
 	xcanvas.drawText('Console 12pt', 'SCREEN', 5, 10, '#000');
 	errorCanvas.clearCanvas('#cfc');
 
@@ -375,7 +377,8 @@ var Compiler = function(){
 			resetPress 		= false,
 			executePress 	= false,
 			commandCounter  = 0,
-			srcString 		= "";
+			srcString 		= "",
+			breakPoints     = [];
 
 
 		// slots src and dst ----------------------------
@@ -749,6 +752,24 @@ var Compiler = function(){
 			return bits;
 		};
 
+		var getFlagValue = function(flag){
+			var status = toBin(parseInt(registers["STATE"].value));
+
+			for( var i = 3 - status.length; i > 0; i--)
+				status = '0' + status;
+
+			var c = parseInt(status[2]),
+				z = parseInt(status[1]),
+				s = parseInt(status[0]);
+
+			if(flag === "C")
+				return c;
+			else if(flag === "Z")
+				return z;
+			else if(flag === "S")
+				return s;
+		};
+
 		var checkFlags = function(value){
 			var status = toBin(parseInt(registers["STATE"].value));
 			if(status.length == 2)
@@ -936,6 +957,7 @@ var Compiler = function(){
 			CODESEGMENT[26624 + commandCounter].hex   = hexBundle.innerHTML;
 			CODESEGMENT[26624 + commandCounter].bin   = bin;
 			CODESEGMENT[26624 + commandCounter].slots = slots;
+			CODESEGMENT[26624 + commandCounter].command = currentString;
 	
 			//#########################################CREATE DUMP######################################################
 				var h = toHex(26624 + commandCounter);
@@ -1179,13 +1201,15 @@ var Compiler = function(){
 					else
 						slots[2] = {src:'R0', dst:'NULL', cdtn:slots[2].cdtn, sf:false};
 				}
+
+				currentString = bundle;
 				
 			return slots;
 		};
 
 		//############-Create slots-#################################
 
-		_core.drawRegisters = function(){
+		var drawRegisters = function(){
 			destroyChildren(srcTable);
 			destroyChildren(dstTable);
 			destroyChildren(flgTable);
@@ -1205,6 +1229,7 @@ var Compiler = function(){
 
 				var addr = document.createElement('td');
 					addr.innerHTML = toHex(register.addr);
+					addr.className = 'regCol';
 
 				var reg = document.createElement('td');
 					reg.className = 'regCol';
@@ -1239,6 +1264,7 @@ var Compiler = function(){
 					row.setAttribute("id", "row" + c);
 
 					var addr = document.createElement('td');
+						addr.className = 'regCol';
 						addr.innerHTML = toHex(register.addr);
 
 					var reg = document.createElement('td');
@@ -1273,6 +1299,8 @@ var Compiler = function(){
 				flg.className = 'regCol';
 
 				var val = document.createElement('td');
+					val.className = 'regCol';
+
 				flg.innerHTML = p;		
 				val.innerHTML = flagsData[p];
 
@@ -1292,6 +1320,8 @@ var Compiler = function(){
 				flg.className = 'regCol';
 
 				var val = document.createElement('td');
+					val.className = 'regCol';
+
 				flg.innerHTML = p;		
 				val.innerHTML = toHex(labels[p]);
 
@@ -1343,11 +1373,15 @@ var Compiler = function(){
 		};
 
 		var sub  = function(){ 
-			registers["SUB"].value = registers["SUB.B"].value - registers["SUB.A"].value;
+			registers["SUB"].value = registers["SUB.A"].value - registers["SUB.B"].value;
+
+			if(registers["SUB"].value < 0)
+				registers["SUB"].value = registers["SUB"].value >>> 0;
+
 		};
 
-		var addc = function(){
-			registers["ADDC"].value = registers["ADDC.A"].value  + registers["ADDC.B"].value + flags.C;
+		var addc = function(slotID){
+			registers["ADDC"].value = registers["ADDC.A"].value  + registers["ADDC.B"].value + getFlagValue("C");
 		};
 
 		var xor  = function(){
@@ -1384,7 +1418,7 @@ var Compiler = function(){
 			return result;
 		}
 
-		var calculateFunction = function(func){
+		var calculateFunction = function(func, slotID){
 			var result = 0;
 			switch(func)
 			{
@@ -1393,7 +1427,7 @@ var Compiler = function(){
 					changedRows.push(func);
 					break;
 				case "ADDC":
-					result = addc();
+					result = addc(slotID);
 					changedRows.push(func);
 					break;
 				case "SUB":
@@ -1429,7 +1463,7 @@ var Compiler = function(){
 
 			if(isFunction(slot.src))
 			{
-				calculateFunction(slot.src);
+				calculateFunction(slot.src, slotID);
 				if(slotID !== 0)
 					calculateFlagC(registers[slot.src].value,slotID);
 			}
@@ -1453,6 +1487,41 @@ var Compiler = function(){
 				runSlot();
 		};
 
+		var checkOR = function(slots){
+			var d0 = slots[0].dst,
+				d1 = slots[1].dst,
+				d2 = slots[2].dst,
+				s0 = slots[0].src,
+				s1 = slots[1].src,
+				s2 = slots[2].src,
+				s = -1;
+
+				if(d0 === d1 && d0 === d2){
+					registers[d0].value = registers[s0].value | registers[s1].value  | registers[s2].value;
+					changedRows.push(d0);
+				}
+				else
+				{
+					if(d0 === d1){
+						registers[d0].value = registers[s0].value  | registers[s1].value ;
+						s = 2;
+						changedRows.push(d0);
+					}
+					if(d0 === d2){
+						registers[d0].value = registers[s0].value  | registers[s2].value ;
+						s = 1
+						changedRows.push(d0);
+					}
+					if(d1 === d2){
+						registers[d1].value = registers[s1].value  | registers[s2].value ;
+						s = 0;
+						changedRows.push(d1);
+					}
+				}
+
+			return s;
+		};
+
 		var runSlots = function(slots){
 
 			var slot0 = slots[0],
@@ -1463,35 +1532,56 @@ var Compiler = function(){
 
 			if(slot0.const10 || slot0.const16)
 			{
-				//#########################CONST-MODE###################################
-					if(slot0.const10){
-						registers["CONST10"].value = slot0.fullconst;
-						changedRows.push("CONST10");
-					}
-					else if(slot0.const16){
-						registers["CONST16"].value = slot0.fullconst;
-						changedRows.push("CONST16");
-					}
-				
-				//#########################CONST-MODE###################################
+				var registerName = "CONST10";
+				if(slot0.const16) registerName = "CONST16";
+				registers[registerName].value = slot0.fullconst;
+				changedRows.push(registerName);
 			}
-			else
-				executeSlot(slot0,0);
 
+			var r = checkOR(slots);
+
+			if(r === -1)
+			{
+				if(!slot0.const10 && !slot0.const16)
+					executeSlot(slot0,0);
 				executeSlot(slot1,1,slot0.const16);
 				executeSlot(slot2,2,slot0.const16);
+			}
+			else if(r === 0)
+			{
+				if(!slot0.const10 && !slot0.const16)
+					executeSlot(slot0,0);
+			}
+			else if(r === 1)
+			{
+				executeSlot(slot1,1);
+			}
+			else if(r === 2)
+			{
+				executeSlot(slot2,2);
+			}
 		};
 
 		_core.loadProgram = function(){
 			_core.reset();
 			_core.run();
 			_core.reset();
-			core.drawRegisters();
+			_core.run();
 			codeDump.value += "Program executed... done!" + "\n";
 		};
 
-		_core.refresh = function(){
-			core.drawRegisters();
+		_core.runCommand = function(){
+			var l = runCodeEditor.getCurrentLineNum();
+			var slots = CODESEGMENT[26624 + l].slots;
+			runSlots(slots);
+			drawRegisters();
+			runCodeEditor.step(true);
+		};
+
+		_core.setBreakPoint = function(){
+			var n = runCodeEditor.getCursorLine();
+			runCodeEditor.selectBreakPointLine(n);
+			breakPoints.push(n);
 		};
 
 		_core.run = function(){
@@ -1550,19 +1640,29 @@ var Compiler = function(){
 				for(var i = 0; i < endDump.length; i++)
 					codeDump.value += endDump[i] + "\n";
 
+				var s = "";
+				for(p in CODESEGMENT)
+					s += toHex(parseInt(p))+ ": " + CODESEGMENT[p].hex + " " + CODESEGMENT[p].command + "\n";
+
+
+				runCodeEditor.setValue(s);
+				runCodeEditor.selectLine(0);
+
+
 			console.timeEnd("run-step");
 		};
 
 		_core.step = function(drawRegisters){
 			var s = codeEditor.step(drawRegisters);
 			var slots = getBundleSlots(s);
-			runSlots(slots)
 			drawSlots(slots, drawRegisters);
-			if(drawRegisters)
-			{
-				errorCanvas.clearColor('#cfc');
-				_core.refresh();
-			}
+		};
+
+		_core.resetRunner = function(){
+			runCodeEditor.reset();
+			for(register in registers)
+				registers[register].value = 0;
+			drawRegisters();
 		};
 
 		_core.reset = function(){
@@ -1618,19 +1718,17 @@ var Compiler = function(){
 			flagsData["E-2"] = 0; 
 			//labels = {};
 
-			for(register in registers)
-				registers[register].value = 0;
-
 			codeEditor.reset();
-
-			core.drawRegisters();
+			runCodeEditor.reset();
+			_core.resetRunner();
+			drawRegisters();
 			codeDump.value += "Program reset... done!" + "\n";
 		};
 	};
 
 	_compiler.getCore = function(){return core;};
+
 	var core = new Core();	
-	core.refresh();
 
 	var checkKeys = function(event){
 		if(event.ctrlKey && event.keyCode === 53){
@@ -1653,7 +1751,6 @@ var Compiler = function(){
 			return false;
 		}
 	};
-
 
 	var ctr = document.getElementById("container");
 	document.onkeydown = checkKeys;
