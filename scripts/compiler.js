@@ -1382,7 +1382,7 @@ var Compiler = function(){
 		};
 
 		var calculateFlagsSZ = function(value,slot){
-			(value > 0x8000) ? flagsData["S-"+slot] = 1 : flagsData["S-"+slot] = 0;
+			(value >= 0x8000) ? flagsData["S-"+slot] = 1 : flagsData["S-"+slot] = 0;
 			(value === 0)    ? flagsData["Z-"+slot] = 1 : flagsData["Z-"+slot] = 0;
 		};
 
