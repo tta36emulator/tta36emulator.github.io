@@ -97,6 +97,10 @@ tr, td {
 	background-color: #b00;
 }
 
+.activeBreakPointLine{
+	background-color: #0f0;
+}
+
 .simpleLine{
 	background-color: #000;
 }
@@ -147,27 +151,29 @@ tr, td {
 
 #lblTable{
 	position:absolute;
-	margin-left:0; 
+	margin-left:5px; 
+	margin-top:185px; 
 }
 
 #cnsTable{
 	position:absolute;
-	margin-left:180px; 
+	margin-left:277px; 
+	margin-top:185px; 
 }
 
 #srcTable{
 	position:absolute;
-	left:320px; 
+	left:5px; 
 }
 
 #dstTable{
 	position:absolute;
-	margin-left:460px; 
+	margin-left:145px; 
 }
 
 #flgTable{
 	position:absolute;
-	margin-left:594px; 
+	margin-left:277px; 
 }
 
 #codeDump
@@ -201,14 +207,23 @@ tr, td {
 	display:block;
 	position:absolute;
 	top:0px;
-	left:655px;
+	left:405px;
 }
 
 #runCodePane {
 	display:block;
 	position:absolute;
 	top:415px;
-	left:1370px;
+	left:1120px;
+	border: 1px solid black;
+	border-color: #ccc;
+}
+
+#runDataPane {
+	display:block;
+	position:absolute;
+	top:415px;
+	left:1580px;
 	border: 1px solid black;
 	border-color: #ccc;
 }
@@ -216,22 +231,22 @@ tr, td {
 #rbtnStep, #rbtnRun, #rbtnReset, #rbtnAddBP {
 	position:absolute;
 	top:893px;
-	left:1400px;
+	left:1150px;
 	z-index: 3;
 }
 
 #rbtnRun
 {
-	left:1467px;
+	left:1217px;
 }
 
 #rbtnReset
 {
-	left:1531px;
+	left:1281px;
 }
 
 #rbtnAddBP{
-	left:1606px;
+	left:1356px;
 }
 	
 #codePane {
@@ -248,7 +263,7 @@ tr, td {
 
 #lay1{
 	position: absolute;
-	left:1370px;
+	left:1120px;
 	top:5px;
 	border: 1px solid black;
 	border-color: #0f0;
@@ -256,6 +271,6 @@ tr, td {
 
 #lay3{
 	position: absolute;
-	left:1370px;
+	left:1120px;
 	top:210px;
 }

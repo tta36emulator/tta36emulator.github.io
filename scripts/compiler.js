@@ -161,6 +161,7 @@ var Compiler = function(){
 	_compiler = this;
 	var codeEditor    = new CodeEditor('code',700,603);
 	var runCodeEditor = new CodeEditor('runCode',450,472);
+	var memoryEditor  = new CodeEditor('runData',300,472);
 
 	var scr  = document.getElementById('lay1');
 	var bg_context = scr.getContext('2d');
@@ -214,8 +215,11 @@ var Compiler = function(){
 		slot2:{src:0,dst:0},
 	};
 
-	var FRAMEBUFFER = [];
 	var CODESEGMENT = [];
+	var DATASEGMENT = [];
+	var isDataseg = false;
+	var currentDataPointer = 0;
+	var isEND = false;
 
 	xcanvas.clearCanvas('#000');
 	xcanvas.drawText('Console 12pt', 'SCREEN', 5, 10, '#000');
@@ -223,15 +227,16 @@ var Compiler = function(){
 
 	codeEditor.refresh();
 
-	var initFrameBufferMemory = function(){
-		for (var i = 0; i < 0x8000; i++)
-			FRAMEBUFFER[i] = 0x0000;
+	var initDataMemory = function(){
+		for (var i = 0; i < 0xFFFF; i++)
+			DATASEGMENT[i] = 0x0000;
 	}();
 
 	var initCodeMemory = function(){
-		for (var i = 0x6800; i < 0xFFFF; i++)
+		CODESEGMENT = [];
+		for (var i = DECCodeOffset; i < 0xFFFF; i++)
 			CODESEGMENT[i] = {bin:0, hex:0, slots:[]};
-	}();
+	};
 
 		//fill hex nubmer zero
 	var zeroFill  = function(number, width )
@@ -363,6 +368,7 @@ var Compiler = function(){
 			consts 		    = {},
 			registers       = {},
 			offset 			= 0x6800,
+			DECCodeOffset   = 26624,
 			changedRows 	= [],
 			binaryDump 		= [],
 			endDump			= [],
@@ -378,8 +384,9 @@ var Compiler = function(){
 			executePress 	= false,
 			commandCounter  = 0,
 			srcString 		= "",
-			breakPoints     = [];
-
+			breakPoints     = [],
+			activeBreakPointLine = -1,
+			IP = DECCodeOffset;
 
 		// slots src and dst ----------------------------
 
@@ -595,6 +602,8 @@ var Compiler = function(){
 
 						offset = str;
 						PC = offset;
+						DECCodeOffset = offset;
+						initCodeMemory();
 						codeDump.value += "SET PC = 0x" + toHex2(toBin(offset)).result + "\n";
 					}
 					else if(command.indexOf('.SET') > -1)
@@ -609,6 +618,12 @@ var Compiler = function(){
 					{
 						codeDump.value += "Program end!" + "\n";
 						codeDump.value += commandCounter + " commands compiled..." + "\n";
+					}
+					else if(command.indexOf('DATASEG') > -1)
+					{
+						var str = command.replace("DATASEG"," ").trim();
+						currentDataPointer = parseInt(str);
+						isDataseg = true;
 					}
 					else
 					{
@@ -954,13 +969,13 @@ var Compiler = function(){
 
 			binBundle.innerHTML = bin;
 			hexBundle.innerHTML = toHex2(sr2 + sr1 + sr0).result;
-			CODESEGMENT[26624 + commandCounter].hex   = hexBundle.innerHTML;
-			CODESEGMENT[26624 + commandCounter].bin   = bin;
-			CODESEGMENT[26624 + commandCounter].slots = slots;
-			CODESEGMENT[26624 + commandCounter].command = currentString;
+			CODESEGMENT[DECCodeOffset + commandCounter].hex   = hexBundle.innerHTML;
+			CODESEGMENT[DECCodeOffset + commandCounter].bin   = bin;
+			CODESEGMENT[DECCodeOffset + commandCounter].slots = slots;
+			CODESEGMENT[DECCodeOffset + commandCounter].command = currentString;
 	
 			//#########################################CREATE DUMP######################################################
-				var h = toHex(26624 + commandCounter);
+				var h = toHex(DECCodeOffset + commandCounter);
 				var st = h + " " + hexBundle.innerHTML + " [ " + srcString + " ]";
 
 				for(var i = 65 - st.length; i > 0 ; i--){
@@ -1032,6 +1047,13 @@ var Compiler = function(){
 				var command = parseCommand(commands[i]);
 				if(command !== -1)
 					parsedCommands.push(command);
+			}
+
+			if(isDataseg){
+				slots[0] = {isNull:true};
+				slots[1] = {isNull:true};
+				slots[2] = {isNull:true};
+				return slots;
 			}
 
 			if(parsedCommands.length > 0)
@@ -1475,7 +1497,7 @@ var Compiler = function(){
 				if(slot.sf)
 					createSTATE();
 
-				if(slot.cdtn && c16 === false)
+				if(slot.cdtn && (c16 === false || c16 === undefined))
 				{
 					if(checkFlags(slot.cdtn))
 					   runSlot();
@@ -1502,17 +1524,17 @@ var Compiler = function(){
 				}
 				else
 				{
-					if(d0 === d1){
+					if(d0 === d1 && slots[0].cdtn === '' && slots[1].cdtn === ''){
 						registers[d0].value = registers[s0].value  | registers[s1].value ;
 						s = 2;
 						changedRows.push(d0);
 					}
-					if(d0 === d2){
+					if(d0 === d2 && slots[0].cdtn === '' && slots[2].cdtn === ''){
 						registers[d0].value = registers[s0].value  | registers[s2].value ;
 						s = 1
 						changedRows.push(d0);
 					}
-					if(d1 === d2){
+					if(d1 === d2 && slots[1].cdtn === '' && slots[2].cdtn === ''){
 						registers[d1].value = registers[s1].value  | registers[s2].value ;
 						s = 0;
 						changedRows.push(d1);
@@ -1562,6 +1584,28 @@ var Compiler = function(){
 			}
 		};
 
+		var drawBreakPoints = function(){
+			for(i = breakPoints.length - 1; i >= 0; i--)
+			{
+				if(breakPoints[i] !== activeBreakPointLine && breakPoints[i] !== runCodeEditor.getCurrentLineNum())
+					runCodeEditor.selectBreakPointLine(breakPoints[i]);
+			}
+		};
+
+		var setBreakPoint = function(n){
+			runCodeEditor.selectBreakPointLine(n);
+			breakPoints.push(n);
+		};
+
+		var delBreakPoint = function(n){
+			var s = breakPoints.indexOf(n);
+			if(s > -1)
+			{
+				breakPoints.splice(s,1);
+				runCodeEditor.removeAllClassFromLine(n);
+			}
+		}
+
 		_core.loadProgram = function(){
 			_core.reset();
 			_core.run();
@@ -1571,24 +1615,86 @@ var Compiler = function(){
 		};
 
 		_core.runCommand = function(){
-			var l = runCodeEditor.getCurrentLineNum();
-			var slots = CODESEGMENT[26624 + l].slots;
+			var slots = CODESEGMENT[IP].slots,
+				oldIP = registers["IP"].value;
+
+			activeBreakPointLine = -1;
 			runSlots(slots);
+
+			if(oldIP === registers["IP"].value){
+				IP++;
+				registers["IP"].value = IP;
+				runCodeEditor.selectLineAndSetCurrent(IP - DECCodeOffset);
+			}
+			else
+			{
+				IP = registers["IP"].value;
+				runCodeEditor.selectLineAndSetCurrent(IP - DECCodeOffset);
+			}
+
+			registers["LINK"].value = registers["IP"].value + 1;
+
+			drawBreakPoints();
 			drawRegisters();
-			runCodeEditor.step(true);
 		};
 
-		_core.setBreakPoint = function(){
+		_core.runCommands = function(){
+			runCodeEditor.removeAllClassFromLine(runCodeEditor.getCurrentLineNum());
+			var c = 0;
+			while(true){
+
+				c++;
+				if(c > 1000000)
+				{
+					errorCanvas.drawError('Console 12pt', "1000000 operations...", 5, 30, '#000');
+					break;
+				}
+
+
+				var l = IP - DECCodeOffset;
+				if(breakPoints.indexOf(l) > -1 && activeBreakPointLine !== l)	{
+					runCodeEditor.selectActiveBreakPointLine(l);
+					activeBreakPointLine = l;
+					break;
+				}
+
+				var slots = CODESEGMENT[IP].slots,
+					oldIP = registers["IP"].value;
+
+				runSlots(slots);
+
+				if(oldIP === registers["IP"].value){
+					IP++;
+					registers["IP"].value = IP;
+					runCodeEditor.step(false);
+				}
+				else
+					IP = registers["IP"].value;
+
+				registers["LINK"].value = registers["IP"].value + 1;
+			}
+
+			drawRegisters();
+			drawBreakPoints();
+		};
+
+		_core.setDelBP = function(n){
 			var n = runCodeEditor.getCursorLine();
-			runCodeEditor.selectBreakPointLine(n);
-			breakPoints.push(n);
+			if(breakPoints.indexOf(n) > -1) 
+				delBreakPoint(n);
+			else 
+				setBreakPoint(n);
 		};
 
 		_core.run = function(){
 
 			console.time("run-step");
 				for(var i = 0; i < codeEditor.getLinesCount(); i++)
+				{
+					if(isEND)
+						break;
 					_core.step(false);
+				}
 
 				if(wordCounter > 0)
 				{
@@ -1644,25 +1750,53 @@ var Compiler = function(){
 				for(p in CODESEGMENT)
 					s += toHex(parseInt(p))+ ": " + CODESEGMENT[p].hex + " " + CODESEGMENT[p].command + "\n";
 
-
 				runCodeEditor.setValue(s);
 				runCodeEditor.selectLine(0);
 
+				var d = "";
+				for(var i = 0; i < DATASEGMENT.length; i++)
+					d += toHex(i)+ ": " + DATASEGMENT[i] + "\n";
+
+				memoryEditor.setValue(d);
+				memoryEditor.selectLine(0);
 
 			console.timeEnd("run-step");
 		};
 
 		_core.step = function(drawRegisters){
 			var s = codeEditor.step(drawRegisters);
-			var slots = getBundleSlots(s);
-			drawSlots(slots, drawRegisters);
+
+			if(!isDataseg)
+			{
+				var slots = getBundleSlots(s);
+				drawSlots(slots, drawRegisters);
+			}
+			else
+			{
+				if(s.indexOf('ENDDATASEG.') > -1){
+					isEND = true;
+					return;
+				} 
+
+				var n = parseInt(s);
+				if(!isNaN(n)){
+					DATASEGMENT[currentDataPointer] = n;
+					currentDataPointer++;
+				}
+			}
 		};
 
 		_core.resetRunner = function(){
 			runCodeEditor.reset();
+			breakPoints = [];
+			activeBreakPointLine = -1;
+			IP = DECCodeOffset;
+			registers["IP"].value = IP;
 			for(register in registers)
 				registers[register].value = 0;
 			drawRegisters();
+			isDataseg = false;
+			currentDataPointer = 0;
 		};
 
 		_core.reset = function(){
@@ -1706,6 +1840,7 @@ var Compiler = function(){
 			endString = '';
 			endCounter = 0;
 			PC = 0x6800;
+			isEND = false;
 
 			flagsData["C-1"] = 0;
 			flagsData["Z-1"] = 0;

@@ -10,10 +10,12 @@
 	<body>
 
 	<div id = "runCodePane"><textarea id="runCode"></textarea></div>
+	<div id = "runDataPane"><textarea id="runData"></textarea></div>
+	
 	<input id = "rbtnStep"  class = "cbutton" type = "button" value = "Step[^7]"  onclick = "compiler.getCore().runCommand()">
 	<input id = "rbtnRun"   class = "cbutton" type = "button" value = "Run[^8]"   onclick = "compiler.getCore().runCommands()">
 	<input id = "rbtnReset" class = "cbutton" type = "button" value = "Reset[^9]" onclick = "compiler.getCore().resetRunner()">
-	<input id = "rbtnAddBP" class = "cbutton" type = "button" value = "setBP[^b]" onclick = "compiler.getCore().setBreakPoint()">
+	<input id = "rbtnAddBP" class = "cbutton" type = "button" value = "setBP[^b]" onclick = "compiler.getCore().setDelBP()">
 
 	<div id = "container">
 		<table id = 'lblTable' class = 'ctable'>

@@ -199,6 +199,10 @@ var CodeEditor = function (id,w,h) {
 			var s = lineArray[currentLineNum];
 
 			if(updateLine){
+				editor.removeLineClass(currentLineNum, "wrap", "simpleLine");
+				editor.removeLineClass(currentLineNum, "wrap", "errorLine");
+				editor.removeLineClass(currentLineNum, "wrap", "activeBreakPointLine");	
+				editor.removeLineClass(currentLineNum, "wrap", "breakPointLine");
 				editor.removeLineClass(currentLineNum, "wrap", "currentLine");
 				editor.addLineClass(currentLineNum, "wrap", "simpleLine");
 			}
@@ -208,7 +212,9 @@ var CodeEditor = function (id,w,h) {
 			if(updateLine){
 				if(currentLineNum < lines){
 					editor.removeLineClass(currentLineNum, "wrap", "simpleLine");
-					editor.removeLineClass(currentLineNum, "wrap", "errorLine");	
+					editor.removeLineClass(currentLineNum, "wrap", "errorLine");
+					editor.removeLineClass(currentLineNum, "wrap", "activeBreakPointLine");	
+					editor.removeLineClass(currentLineNum, "wrap", "breakPointLine");
 					editor.addLineClass(currentLineNum, "wrap", "currentLine");	
 				}	
 			}	
@@ -218,26 +224,69 @@ var CodeEditor = function (id,w,h) {
 		self.selectBreakPointLine = function(line){
 			editor.removeLineClass(line, "wrap", "simpleLine");
 			editor.removeLineClass(line, "wrap", "currentLine");
+			editor.removeLineClass(line, "wrap", "activeBreakPointLine");
+			editor.removeLineClass(line, "wrap", "errorLine");	
 			editor.addLineClass(line, "wrap", "breakPointLine");		
+		};
+
+		self.selectActiveBreakPointLine = function(line){
+			editor.removeLineClass(line, "wrap", "simpleLine");
+			editor.removeLineClass(line, "wrap", "currentLine");
+			editor.removeLineClass(line, "wrap", "breakPointLine");
+			editor.removeLineClass(line, "wrap", "errorLine");	
+			editor.addLineClass(line, "wrap", "activeBreakPointLine");	
 		}
 
 		self.selectErrorLine = function(){
 			var line = currentLineNum - 1;
 			editor.removeLineClass(line, "wrap", "simpleLine");
+			editor.removeLineClass(line, "wrap", "currentLine");
+			editor.removeLineClass(line, "wrap", "breakPointLine");
+			editor.removeLineClass(line, "wrap", "activeBreakPointLine");
 			editor.addLineClass(line, "wrap", "errorLine");		
-		}
+		};
 
 		self.selectLine = function(value){
 			editor.removeLineClass(value, "wrap", "simpleLine");
 			editor.removeLineClass(value, "wrap", "errorLine");	
+			editor.removeLineClass(value, "wrap", "activeBreakPointLine");
+			editor.removeLineClass(value, "wrap", "breakPointLine");
 			editor.addLineClass(value, "wrap", "currentLine");
-		}
+		};
 
-		self.reset = function(){		
+		self.selectLineAndSetCurrent = function(value){
+			editor.removeLineClass(currentLineNum, "wrap", "simpleLine");
+			editor.removeLineClass(currentLineNum, "wrap", "errorLine");	
+			editor.removeLineClass(currentLineNum, "wrap", "activeBreakPointLine");
+			editor.removeLineClass(currentLineNum, "wrap", "breakPointLine");
+			editor.addLineClass(currentLineNum, "wrap", "simpleLine");
+
+			currentLineNum = value;
+
+			editor.removeLineClass(currentLineNum, "wrap", "simpleLine");
+			editor.removeLineClass(currentLineNum, "wrap", "errorLine");	
+			editor.removeLineClass(currentLineNum, "wrap", "activeBreakPointLine");
+			editor.removeLineClass(currentLineNum, "wrap", "breakPointLine");
+			editor.addLineClass(currentLineNum, "wrap", "currentLine");
+		};
+
+		self.removeAllClassFromLine = function(line){
+			editor.removeLineClass(line, "wrap", "activeBreakPointLine");
+			editor.removeLineClass(line, "wrap", "breakPointLine");
+			editor.removeLineClass(line, "wrap", "currentLine");
+			editor.removeLineClass(line, "wrap", "errorLine");	
+			editor.addLineClass(line, "wrap", "simpleLine");
+		};
+
+		self.reset = function(){	
+			editor.removeLineClass(currentLineNum, "wrap", "activeBreakPointLine");
+			editor.removeLineClass(currentLineNum, "wrap", "breakPointLine");	
 			editor.removeLineClass(currentLineNum, "wrap", "currentLine");
 			editor.removeLineClass(currentLineNum, "wrap", "errorLine");	
 			editor.addLineClass(currentLineNum, "wrap", "simpleLine");
 			  currentLineNum=0;
+			editor.removeLineClass(currentLineNum, "wrap", "activeBreakPointLine");
+			editor.removeLineClass(currentLineNum, "wrap", "breakPointLine");
 			editor.removeLineClass(currentLineNum, "wrap", "simpleLine");
 			editor.removeLineClass(currentLineNum, "wrap", "errorLine");	
 			editor.addLineClass(currentLineNum, "wrap", "currentLine");
