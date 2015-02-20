@@ -1477,8 +1477,15 @@ var Compiler = function(){
 				prevADDR = registers["ADDR"].value;
 		};
 
-		var isReadDATA = function(){
-			
+		var isReadDATA = function(slot){
+			if(slot.src === "DATA")
+			{
+				var ADDR = registers["ADDR"].value,
+					shift = ADDR >>> 1;
+
+				if(slot.src === "DATA")
+					registers[slot.dst] = DATASEGMENT[shift];
+			}
 		};
 
 		var isReadADDR = function(){
