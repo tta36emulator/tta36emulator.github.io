@@ -386,7 +386,9 @@ var Compiler = function(){
 			srcString 		= "",
 			breakPoints     = [],
 			activeBreakPointLine = -1,
-			IP = DECCodeOffset;
+			IP = DECCodeOffset,
+			tempDATA = -1,
+			prevADDR = -1;
 
 		// slots src and dst ----------------------------
 
@@ -604,7 +606,7 @@ var Compiler = function(){
 						PC = offset;
 						DECCodeOffset = offset;
 						initCodeMemory();
-						codeDump.value += "SET PC = 0x" + toHex2(toBin(offset)).result + "\n";
+						codeDump.value += "SET PC = " + toHex(offset) + "\n";
 					}
 					else if(command.indexOf('.SET') > -1)
 					{
@@ -663,16 +665,12 @@ var Compiler = function(){
 			//############-Const10/16-#################################
 
 			//4. ############-Find slot candidats-########################
-				if(!_c16 && !_c10)
-					_slots = getSlotCandidats(_src,_dst,_sf,_cdtn);
-				else{
+				if(_c16 || _c10){
 					_const = _src;
-					(_src > 0x3FF) ? _src = 'CONST16' : _src = 'CONST10';
-					_slots = getSlotCandidats(_src,_dst,_sf,_cdtn);
+					(_c16) ? _src = 'CONST16' : _src = 'CONST10';
 				}
-
+				_slots = getSlotCandidats(_src,_dst,_sf,_cdtn);
 				_priority = _slots.length;
-
 			//############-Find slot candidats-########################
 	
 			if(_sf)
@@ -1049,13 +1047,6 @@ var Compiler = function(){
 					parsedCommands.push(command);
 			}
 
-			if(isDataseg){
-				slots[0] = {isNull:true};
-				slots[1] = {isNull:true};
-				slots[2] = {isNull:true};
-				return slots;
-			}
-
 			if(parsedCommands.length > 0)
 			{
 				srcString = bundle.trim();
@@ -1063,6 +1054,8 @@ var Compiler = function(){
 				if(c > -1)
 					srcString = srcString.substring(0, c).trim();
 			}
+			else
+				return -1;
 
 			//############-Create slots-#################################
 
@@ -1071,7 +1064,6 @@ var Compiler = function(){
 					const16E = false,
 					const10E = false,
 					isConst  = false;
-
 
 					for(var i = 0; i < parsedCommands.length; i++)
 					{
@@ -1469,12 +1461,39 @@ var Compiler = function(){
 			return result;
 		};
 
+		var  resetMemory = function(){
+			for (var i = 0; i < 0xFFFF; i++)
+				DATASEGMENT[i] = 0x0000;
+			drawMemory();
+		};
+
+		var isWriteDATA = function(slot){
+			if(slot.dst === "DATA")
+				tempDATA = registers[slot.src].value;
+		};
+
+		var isWriteADDR = function(slot){
+			if(slot.dst === "ADDR")
+				prevADDR = registers["ADDR"].value;
+		};
+
+		var isReadDATA = function(){
+			
+		};
+
+		var isReadADDR = function(){
+			
+		};
+
 		var executeSlot = function(slot,slotID, c16){
 
 			var runSlot = function(){
 				changedRows.push(slot.dst);
 				registers[slot.src].value = registers[slot.src].value % 0x10000
 				registers[slot.dst].value = registers[slot.src].value;
+
+				isWriteDATA(slot);
+				isWriteADDR(slot);
 			};
 
 			var createSTATE = function(){
@@ -1582,6 +1601,13 @@ var Compiler = function(){
 			{
 				executeSlot(slot2,2);
 			}
+
+			if(tempDATA !== -1){
+				var adr = registers["ADDR"].value >>> 1;
+				DATASEGMENT[adr] = tempDATA;
+			}
+
+			tempDATA = -1;
 		};
 
 		var drawBreakPoints = function(){
@@ -1606,11 +1632,21 @@ var Compiler = function(){
 			}
 		}
 
+		var drawMemory = function(){
+			var d = "";
+			for(var i = 0; i < DATASEGMENT.length; i+=2)
+				d += toHex(i)+ ": " + toHex(DATASEGMENT[i]) + "\n";
+
+			memoryEditor.setValue(d);
+			memoryEditor.selectLine(0);
+		}
+
 		_core.loadProgram = function(){
 			_core.reset();
 			_core.run();
 			_core.reset();
 			_core.run();
+			drawMemory();
 			codeDump.value += "Program executed... done!" + "\n";
 		};
 
@@ -1636,6 +1672,7 @@ var Compiler = function(){
 
 			drawBreakPoints();
 			drawRegisters();
+			drawMemory();
 		};
 
 		_core.runCommands = function(){
@@ -1647,14 +1684,15 @@ var Compiler = function(){
 				if(c > 1000000)
 				{
 					errorCanvas.drawError('Console 12pt', "1000000 operations...", 5, 30, '#000');
+					drawMemory();
 					break;
 				}
-
 
 				var l = IP - DECCodeOffset;
 				if(breakPoints.indexOf(l) > -1 && activeBreakPointLine !== l)	{
 					runCodeEditor.selectActiveBreakPointLine(l);
 					activeBreakPointLine = l;
+					drawMemory();
 					break;
 				}
 
@@ -1752,14 +1790,6 @@ var Compiler = function(){
 
 				runCodeEditor.setValue(s);
 				runCodeEditor.selectLine(0);
-
-				var d = "";
-				for(var i = 0; i < DATASEGMENT.length; i++)
-					d += toHex(i)+ ": " + DATASEGMENT[i] + "\n";
-
-				memoryEditor.setValue(d);
-				memoryEditor.selectLine(0);
-
 			console.timeEnd("run-step");
 		};
 
@@ -1769,7 +1799,10 @@ var Compiler = function(){
 			if(!isDataseg)
 			{
 				var slots = getBundleSlots(s);
-				drawSlots(slots, drawRegisters);
+				if(slots !== -1)
+				   drawSlots(slots, drawRegisters);
+				else
+				   codeDump.value +=  comment + "\n";
 			}
 			else
 			{
@@ -1857,6 +1890,7 @@ var Compiler = function(){
 			runCodeEditor.reset();
 			_core.resetRunner();
 			drawRegisters();
+			resetMemory();
 			codeDump.value += "Program reset... done!" + "\n";
 		};
 	};
