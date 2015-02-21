@@ -1672,6 +1672,9 @@ var Compiler = function(){
 					d += toHex(i << 1) + ": " + toHex(DATASEGMENT[i]) + "\n";
 			}
 
+			var idx = d.lastIndexOf("\n");
+			d = d.substring(0, idx);
+
 			if(d !== '')
 				memoryEditor.setValue(d);
 		}
@@ -1685,6 +1688,9 @@ var Compiler = function(){
 
 				s += toHex(parseInt(p))+ ": " + CODESEGMENT[p].hex + " " + CODESEGMENT[p].command + "\n";
 			}
+
+			var idx = s.lastIndexOf("\n");
+			s = s.substring(0, idx);
 
 			runCodeEditor.setValue(s);
 			runCodeEditor.selectLine(0);
