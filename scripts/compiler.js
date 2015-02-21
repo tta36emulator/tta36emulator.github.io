@@ -1706,7 +1706,6 @@ var Compiler = function(){
 			drawMemory();
 			drawCode();
 			drawRegisters();
-			
 			codeDump.value += "Program executed... done!" + "\n";
 		};
 
@@ -1934,6 +1933,7 @@ var Compiler = function(){
 			endCounter = 0;
 			PC = 0x6800;
 			isEND = false;
+			isDataseg = false;
 
 			flagsData["C-1"] = 0;
 			flagsData["Z-1"] = 0;
