@@ -362,6 +362,8 @@ var Compiler = function(){
 
 	var Core = function(){
 		var _core 			= this,
+			SCREEN_WIDTH    = 256, 
+			SCREEN_HEIGHT   = 192,
 			PC 				= 0x6800;
 			flagsData 		= {},
 			labels 		    = {},
@@ -388,7 +390,8 @@ var Compiler = function(){
 			activeBreakPointLine = -1,
 			IP = DECCodeOffset,
 			tempDATA = -1,
-			prevADDR = -1;
+			prevADDR = -1,
+			isPrevADDR = false;
 
 		// slots src and dst ----------------------------
 
@@ -1461,10 +1464,28 @@ var Compiler = function(){
 			return result;
 		};
 
+		var drawScreen = function(){
+			var imageData = bg_context.getImageData(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+	        var data = imageData.data;
+
+	        for(var i = 0; i < data.length; i += 4) {
+	        	 var color = DATASEGMENT[i].toString(2);
+	        	 var r = DATASEGMENT[i] 
+
+	          //var brightness = 0.34 * data[i] + 0.5 * data[i + 1] + 0.16 * data[i + 2];
+	          // red
+	          data[i] = brightness;
+	          // green
+	          data[i + 1] = brightness;
+	          // blue
+	          data[i + 2] = brightness;
+	        }
+	        bg_context.putImageData(imageData, 0, 0);
+		}
+
 		var  resetMemory = function(){
 			for (var i = 0; i < 0xFFFF; i++)
 				DATASEGMENT[i] = 0x0000;
-			drawMemory();
 		};
 
 		var isWriteDATA = function(slot){
@@ -1480,27 +1501,27 @@ var Compiler = function(){
 		var isReadDATA = function(slot){
 			if(slot.src === "DATA")
 			{
-				var ADDR = registers["ADDR"].value,
+				var ADDR = null;
+
+				if(isPrevADDR)
+					ADDR = prevADDR;
+				else
+					ADDR = registers["ADDR"].value;
+					
 					shift = ADDR >>> 1;
-
-				if(slot.src === "DATA")
-					registers[slot.dst] = DATASEGMENT[shift];
+					registers[slot.dst].value = DATASEGMENT[shift];
 			}
-		};
-
-		var isReadADDR = function(){
-			
 		};
 
 		var executeSlot = function(slot,slotID, c16){
 
-			var runSlot = function(){
+			var runSlot = function(){		
 				changedRows.push(slot.dst);
-				registers[slot.src].value = registers[slot.src].value % 0x10000
+				registers[slot.src].value = registers[slot.src].value % 0x10000;
 				registers[slot.dst].value = registers[slot.src].value;
-
-				isWriteDATA(slot);
 				isWriteADDR(slot);
+				isWriteDATA(slot);
+				isReadDATA(slot);			
 			};
 
 			var createSTATE = function(){
@@ -1578,6 +1599,9 @@ var Compiler = function(){
 
 			if(slot0.isNull && slot1.isNull && slot2.isNull) return;
 
+			if((slot0.src === "DATA" || slot1.src === "DATA" || slot2.src === "DATA") && (slot0.dst === "ADDR" || slot1.dst === "ADDR" || slot2.dst === "ADDR"))
+				isPrevADDR = true;
+
 			if(slot0.const10 || slot0.const16)
 			{
 				var registerName = "CONST10";
@@ -1615,6 +1639,7 @@ var Compiler = function(){
 			}
 
 			tempDATA = -1;
+			isPrevADDR = false;
 		};
 
 		var drawBreakPoints = function(){
@@ -1641,19 +1666,41 @@ var Compiler = function(){
 
 		var drawMemory = function(){
 			var d = "";
-			for(var i = 0; i < DATASEGMENT.length; i+=2)
-				d += toHex(i)+ ": " + toHex(DATASEGMENT[i]) + "\n";
 
-			memoryEditor.setValue(d);
-			memoryEditor.selectLine(0);
+			for(var i = 0; i < DATASEGMENT.length; i+=2){
+				if(DATASEGMENT[i] !== 0)
+					d += toHex(i << 1) + ": " + toHex(DATASEGMENT[i]) + "\n";
+			}
+
+			if(d !== '')
+				memoryEditor.setValue(d);
 		}
 
+		var drawCode = function(){
+			var s = "";
+			for(p in CODESEGMENT)
+			{
+				if(CODESEGMENT[p].command === undefined)
+					break;
+
+				s += toHex(parseInt(p))+ ": " + CODESEGMENT[p].hex + " " + CODESEGMENT[p].command + "\n";
+			}
+
+			runCodeEditor.setValue(s);
+			runCodeEditor.selectLine(0);
+		};
+
 		_core.loadProgram = function(){
-			_core.reset();
+			_core.reset(true);
 			_core.run();
-			_core.reset();
+			_core.reset(true);
 			_core.run();
+
+			codeEditor.selectLine(0);
 			drawMemory();
+			drawCode();
+			drawRegisters();
+			
 			codeDump.value += "Program executed... done!" + "\n";
 		};
 
@@ -1791,17 +1838,16 @@ var Compiler = function(){
 				for(var i = 0; i < endDump.length; i++)
 					codeDump.value += endDump[i] + "\n";
 
-				var s = "";
-				for(p in CODESEGMENT)
-					s += toHex(parseInt(p))+ ": " + CODESEGMENT[p].hex + " " + CODESEGMENT[p].command + "\n";
-
-				runCodeEditor.setValue(s);
-				runCodeEditor.selectLine(0);
 			console.timeEnd("run-step");
 		};
 
 		_core.step = function(drawRegisters){
 			var s = codeEditor.step(drawRegisters);
+
+			if(s.indexOf('END.') > -1){
+				isEND = true;
+				return;
+			} 
 
 			if(!isDataseg)
 			{
@@ -1839,7 +1885,8 @@ var Compiler = function(){
 			currentDataPointer = 0;
 		};
 
-		_core.reset = function(){
+		_core.reset = function(isLoad){
+			isLoad = isLoad | false;
 			destroyChildren(srcTable);
 			destroyChildren(dstTable);
 			destroyChildren(flgTable);
@@ -1892,12 +1939,14 @@ var Compiler = function(){
 			flagsData["S-2"] = 0;
 			flagsData["E-2"] = 0; 
 			//labels = {};
-
 			codeEditor.reset();
-			runCodeEditor.reset();
-			_core.resetRunner();
-			drawRegisters();
-			resetMemory();
+
+			if(!isLoad){
+				runCodeEditor.reset();
+				_core.resetRunner();
+				drawRegisters();
+				resetMemory();
+			}
 			codeDump.value += "Program reset... done!" + "\n";
 		};
 	};

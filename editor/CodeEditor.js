@@ -246,11 +246,13 @@ var CodeEditor = function (id,w,h) {
 			editor.addLineClass(line, "wrap", "errorLine");		
 		};
 
-		self.selectLine = function(value){
+		self.selectLine = function(value){			
 			editor.removeLineClass(value, "wrap", "simpleLine");
 			editor.removeLineClass(value, "wrap", "errorLine");	
 			editor.removeLineClass(value, "wrap", "activeBreakPointLine");
 			editor.removeLineClass(value, "wrap", "breakPointLine");
+			editor.removeLineClass(value, "wrap", "currentLine");
+			currentLineNum = value;
 			editor.addLineClass(value, "wrap", "currentLine");
 		};
 
@@ -285,11 +287,11 @@ var CodeEditor = function (id,w,h) {
 			editor.removeLineClass(currentLineNum, "wrap", "errorLine");	
 			editor.addLineClass(currentLineNum, "wrap", "simpleLine");
 			  currentLineNum=0;
-			editor.removeLineClass(currentLineNum, "wrap", "activeBreakPointLine");
-			editor.removeLineClass(currentLineNum, "wrap", "breakPointLine");
-			editor.removeLineClass(currentLineNum, "wrap", "simpleLine");
-			editor.removeLineClass(currentLineNum, "wrap", "errorLine");	
-			editor.addLineClass(currentLineNum, "wrap", "currentLine");
+			//editor.removeLineClass(currentLineNum, "wrap", "activeBreakPointLine");
+			//editor.removeLineClass(currentLineNum, "wrap", "breakPointLine");
+			//editor.removeLineClass(currentLineNum, "wrap", "simpleLine");
+			//editor.removeLineClass(currentLineNum, "wrap", "errorLine");	
+			//editor.addLineClass(currentLineNum, "wrap", "currentLine");
 
 			self.loadCode(self.getCode());	
 		};
