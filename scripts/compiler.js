@@ -1468,17 +1468,22 @@ var Compiler = function(){
 			var imageData = bg_context.getImageData(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 	        var data = imageData.data;
 
+	        var f = 0;
 	        for(var i = 0; i < data.length; i += 4) {
-	        	 var color = DATASEGMENT[i].toString(2);
-	        	 var r = DATASEGMENT[i] 
+	        	 var color = DATASEGMENT[f].toString();
+	        	 var p1 = color[0];
+	        	 var p2 = color[1];
+	        	 var p3 = color[2];
+	        	 var p4 = color[3];
 
-	          //var brightness = 0.34 * data[i] + 0.5 * data[i + 1] + 0.16 * data[i + 2];
-	          // red
-	          data[i] = brightness;
-	          // green
-	          data[i + 1] = brightness;
-	          // blue
-	          data[i + 2] = brightness;
+	        	if(DATASEGMENT[f] !== 0)
+	        	{
+			        data[i] = 255;
+			        data[i + 1] = 0;
+			        data[i + 2] = 0;
+			    }
+
+			    f++;
 	        }
 	        bg_context.putImageData(imageData, 0, 0);
 		}
@@ -1667,7 +1672,7 @@ var Compiler = function(){
 		var drawMemory = function(){
 			var d = "";
 
-			for(var i = 0; i < DATASEGMENT.length; i+=2){
+			for(var i = 0; i < DATASEGMENT.length; i++){
 				if(DATASEGMENT[i] !== 0)
 					d += toHex(i << 1) + ": " + toHex(DATASEGMENT[i]) + "\n";
 			}
@@ -1735,15 +1740,19 @@ var Compiler = function(){
 		};
 
 		_core.runCommands = function(){
+			
 			runCodeEditor.removeAllClassFromLine(runCodeEditor.getCurrentLineNum());
 			var c = 0;
 			while(true){
-
 				c++;
+				if(c === 396652)
+					www = 0;
+
 				if(c > 1000000)
 				{
 					errorCanvas.drawError('Console 12pt', "1000000 operations...", 5, 30, '#000');
 					drawMemory();
+					drawScreen();
 					break;
 				}
 
@@ -1752,6 +1761,7 @@ var Compiler = function(){
 					runCodeEditor.selectActiveBreakPointLine(l);
 					activeBreakPointLine = l;
 					drawMemory();
+					drawScreen();
 					break;
 				}
 
