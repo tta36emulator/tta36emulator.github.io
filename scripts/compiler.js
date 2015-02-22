@@ -254,7 +254,10 @@ var Compiler = function(){
 	}
 
 	var toHex = function(number) {
+		number = 0xFFFFFFFF + number + 1;
 		number = number.toString(16).toUpperCase();
+		if(number.length > 4)
+			number = number.substring(number.length-4, number.length);
 	    return "0x" + zeroFill(number, 4);
 	};
 
@@ -1377,12 +1380,14 @@ var Compiler = function(){
 		};
 
 		var calculateFlagsSZ = function(value,slot){
-			(value >= 0x8000) ? flagsData["S-"+slot] = 1 : flagsData["S-"+slot] = 0;
+			(toHex(value) >= 0x8000) ? flagsData["S-"+slot] = 1 : flagsData["S-"+slot] = 0;
 			(value === 0)    ? flagsData["Z-"+slot] = 1 : flagsData["Z-"+slot] = 0;
 		};
 
 		var calculateFlagC = function(value,slot){
 			(value > 0xFFFF) ? flagsData["C-"+slot] = 1 : flagsData["C-"+slot] = 0;
+			//var h = toHex(value);
+			//(h > 0xFFFF) ? flagsData["C-"+slot] = 1 : flagsData["C-"+slot] = 0;
 		};
 
 		var add  = function(){ 
@@ -1390,11 +1395,10 @@ var Compiler = function(){
 		};
 
 		var sub  = function(){ 
-			registers["SUB"].value = registers["SUB.A"].value - registers["SUB.B"].value;
-
+			var s = parseInt(toHex(~registers["SUB.B"].value));
+			registers["SUB"].value = registers["SUB.A"].value + s + 1;
 			if(registers["SUB"].value < 0)
 				registers["SUB"].value = registers["SUB"].value >>> 0;
-
 		};
 
 		var addc = function(slotID){
