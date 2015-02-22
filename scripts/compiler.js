@@ -1535,7 +1535,7 @@ var Compiler = function(){
 
 			var createSTATE = function(){
 				var s = toHex2(flagsData["S-"+slotID].toString() + flagsData["Z-"+slotID].toString() + flagsData["C-"+slotID].toString());
-				registers["STATE"].value = s.result;
+				registers["STATE"].value = parseInt(s.result);
 				changedRows.push("STATE");
 			};
 
