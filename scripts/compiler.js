@@ -394,7 +394,9 @@ var Compiler = function(){
 			IP = DECCodeOffset,
 			tempDATA = -1,
 			prevADDR = -1,
-			isPrevADDR = false;
+			isPrevADDR = false,
+			IPchanged = false,
+			pState = 0;
 
 		// slots src and dst ----------------------------
 
@@ -791,7 +793,7 @@ var Compiler = function(){
 
 		var checkFlags = function(value){
 			var status = toBin(parseInt(registers["STATE"].value));
-			if(status.length == 2)
+			for(var i = 3-status.length; i > 0; i--)
 				status = '0' + status;
 
 			var c = status[2],
@@ -805,11 +807,11 @@ var Compiler = function(){
 					result = true;
 					break;
 				case 'NZ?':   //NZ
-					if(z === '1')
+					if(z === '0')
 						result = true;
 					break;
 				case 'Z?': 
-					if(z === '0')
+					if(z === '1')
 						result = true;
 					break;
 				case 'C?': 
@@ -1380,14 +1382,12 @@ var Compiler = function(){
 		};
 
 		var calculateFlagsSZ = function(value,slot){
-			(toHex(value) >= 0x8000) ? flagsData["S-"+slot] = 1 : flagsData["S-"+slot] = 0;
-			(value === 0)    ? flagsData["Z-"+slot] = 1 : flagsData["Z-"+slot] = 0;
+			(parseInt(toHex(value)) >= 0x8000) ? flagsData["S-"+slot] = 1 : flagsData["S-"+slot] = 0;
+			(parseInt(toHex(value)) === 0)    ? flagsData["Z-"+slot] = 1 : flagsData["Z-"+slot] = 0;
 		};
 
 		var calculateFlagC = function(value,slot){
-			(value > 0xFFFF) ? flagsData["C-"+slot] = 1 : flagsData["C-"+slot] = 0;
-			//var h = toHex(value);
-			//(h > 0xFFFF) ? flagsData["C-"+slot] = 1 : flagsData["C-"+slot] = 0;
+			(parseInt(toHex(value)) > 0xFFFF) ? flagsData["C-"+slot] = 1 : flagsData["C-"+slot] = 0;
 		};
 
 		var add  = function(){ 
@@ -1522,6 +1522,11 @@ var Compiler = function(){
 			}
 		};
 
+		var isIPChanged = function(slot){
+			if(slot.dst === "IP")
+				IPchanged = true;
+		};
+
 		var executeSlot = function(slot,slotID, c16){
 
 			var runSlot = function(){		
@@ -1530,12 +1535,13 @@ var Compiler = function(){
 				registers[slot.dst].value = registers[slot.src].value;
 				isWriteADDR(slot);
 				isWriteDATA(slot);
-				isReadDATA(slot);			
+				isReadDATA(slot);	
+				isIPChanged(slot);		
 			};
 
 			var createSTATE = function(){
 				var s = toHex2(flagsData["S-"+slotID].toString() + flagsData["Z-"+slotID].toString() + flagsData["C-"+slotID].toString());
-				registers["STATE"].value = parseInt(s.result);
+				pState = parseInt(s.result);
 				changedRows.push("STATE");
 			};
 
@@ -1601,6 +1607,7 @@ var Compiler = function(){
 		};
 
 		var runSlots = function(slots){
+			registers["STATE"].value = pState;
 
 			var slot0 = slots[0],
 				slot1 = slots[1],
@@ -1719,13 +1726,13 @@ var Compiler = function(){
 		};
 
 		_core.runCommand = function(){
-			var slots = CODESEGMENT[IP].slots,
-				oldIP = registers["IP"].value;
+			var slots = CODESEGMENT[IP].slots;
+				//oldIP = registers["IP"].value;
 
 			activeBreakPointLine = -1;
 			runSlots(slots);
 
-			if(oldIP === registers["IP"].value){
+			if(!IPchanged)/*oldIP === registers["IP"].value*//*)*/{
 				IP++;
 				registers["IP"].value = IP;
 				runCodeEditor.selectLineAndSetCurrent(IP - DECCodeOffset);
@@ -1737,6 +1744,8 @@ var Compiler = function(){
 			}
 
 			registers["LINK"].value = registers["IP"].value + 1;
+
+			IPchanged = false;
 
 			drawBreakPoints();
 			drawRegisters();
