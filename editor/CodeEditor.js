@@ -9,6 +9,7 @@ var CodeEditor = function (id,w,h) {
 	var currentLineNum = 0;
 	var lines = 0;
 	var lineArray = [];
+	var selectedLines = [];
 
 	var dangerWords = [
         'eval', '.call', 'call(', 'apply', 'bind',
@@ -32,8 +33,16 @@ var CodeEditor = function (id,w,h) {
 
     var warnings = [];
 
+    var makeMarker = function() {
+	  var marker = document.createElement("div");
+	  marker.style.color = "#0F0";
+	  marker.innerHTML = "●";
+	  return marker;
+	}
+
 	var editor = CodeMirror.fromTextArea(document.getElementById(id), {
 					lineNumbers: true,
+					gutters: ["CodeMirror-linenumbers", "breakpoints"],
 					matchBrackets: true,
 					mode: 'javascript',
 					theme: "vibrant-ink",
@@ -45,7 +54,18 @@ var CodeEditor = function (id,w,h) {
 				});   
 				editor.setSize(w, h); 
 
+		editor.on("gutterClick", function(cm, n) {
+		  var info = cm.lineInfo(n);
+		  cm.setGutterMarker(n, "breakpoints", info.gutterMarkers ? null : makeMarker());
+		  self.selectLine(n);
+		  selectedLines.push(n);
+		});
 
+		self.selectLines = function(){
+			for(var i = 0; i < selectedLines.length; i++){
+				self.select(selectedLines[i]);
+			}
+		};
 
 		self.preprocess = function(code){
 			 //var lines = code.split("\n");
@@ -180,7 +200,21 @@ var CodeEditor = function (id,w,h) {
 
 		self.appendTo = function(text) {
 		    editor.replaceRange(text, CodeMirror.Pos(currentLineNum-1));
-		}
+		};
+
+		self.jumpToLine = function (i) { 
+		    var t = editor.charCoords({line: i, ch: 0}, "local").top; 
+		    var middleHeight = editor.getScrollerElement().offsetHeight / 2; 
+		    editor.scrollTo(null, t - middleHeight - 5); 
+		} ;
+
+		self.getScrollInfo = function(){
+			return editor.getScrollInfo();
+		};
+
+		self.scrollTo = function(l,t){
+			editor.scrollTo(l,t);
+		};
 
 		self.insertLine = function(text) {
 		    var doc = editor.getDoc();
@@ -191,7 +225,7 @@ var CodeEditor = function (id,w,h) {
 			    ch: line.length - 1
 			}
 			doc.replaceRange(text + '\n', pos);
-		}
+		};
 
 		self.getLinesCount = function(){return lines};
 
@@ -253,6 +287,10 @@ var CodeEditor = function (id,w,h) {
 			editor.removeLineClass(value, "wrap", "breakPointLine");
 			editor.removeLineClass(value, "wrap", "currentLine");
 			currentLineNum = value;
+			editor.addLineClass(value, "wrap", "currentLine");
+		};
+
+		self.select= function(value){			
 			editor.addLineClass(value, "wrap", "currentLine");
 		};
 

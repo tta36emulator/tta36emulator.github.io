@@ -1726,6 +1726,10 @@ var Compiler = function(){
 		};
 
 		_core.runCommand = function(){
+			var info = memoryEditor.getScrollInfo();
+			//memoryEditor.jumpToLine(91);
+			
+
 			var slots = CODESEGMENT[IP].slots;
 				//oldIP = registers["IP"].value;
 
@@ -1750,6 +1754,8 @@ var Compiler = function(){
 			drawBreakPoints();
 			drawRegisters();
 			drawMemory();
+			memoryEditor.scrollTo(info.left,info.top);
+			memoryEditor.selectLines();
 		};
 
 		_core.runCommands = function(){
